@@ -1,0 +1,11 @@
+# CMake
+/build
+/cmake-build-debug
+
+# .
+/.cache
+/.idea
+/.vscode
+
+# debug
+/vedio
