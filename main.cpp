@@ -3,6 +3,88 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
+cv::Mat lineDetection(cv::Mat binary, cv::Mat src) {
+    // 1. 检查输入
+    if (binary.empty() || src.empty()) {
+        return cv::Mat();
+    }
+
+    // 2. 获取图像尺寸
+    int height = binary.rows;
+    int width = binary.cols;
+
+    // 3. 创建输出图像（基于原始图像）
+    cv::Mat result = src.clone();
+
+    // 4. 左右边线点存储
+    std::vector<cv::Point> leftLine;
+    std::vector<cv::Point> rightLine;
+
+    // 5. 从下往上扫描（假设摄像头视角从底部开始）
+    for (int y = height - 1; y >= height / 2; y--) { // 只扫描下半部分图像
+        std::vector<int> whitePos; // 存储每行白色像素位置
+
+        // 6. 统计每行白色像素位置
+        for (int x = 0; x < width; x++) {
+            if (binary.at<uchar>(y, x) == 255) {
+                whitePos.push_back(x);
+            }
+        }
+
+        if (whitePos.empty()) continue;
+
+        // 7. 寻找最长连续白列
+        int maxLen = 0, currLen = 1;
+        int leftEdge = whitePos[0], rightEdge = whitePos[0];
+        int tempLeft = whitePos[0];
+
+        for (int i = 1; i < whitePos.size(); i++) {
+            if (whitePos[i] == whitePos[i-1] + 1) {
+                currLen++;
+                if (currLen > maxLen) {
+                    maxLen = currLen;
+                    leftEdge = tempLeft;
+                    rightEdge = whitePos[i];
+                }
+            } else {
+                currLen = 1;
+                tempLeft = whitePos[i];
+            }
+        }
+
+        // 8. 计算差比和确定左右边线
+        if (!leftLine.empty() && !rightLine.empty()) {
+            // 使用上一行的边线位置进行预测和筛选
+            int lastLeft = leftLine.back().x;
+            int lastRight = rightLine.back().x;
+
+            // 判断当前检测到的边线与上一行边线的连续性
+            if (abs(leftEdge - lastLeft) < width / 4 && abs(rightEdge - lastRight) < width / 4) {
+                leftLine.push_back(cv::Point(leftEdge, y));
+                rightLine.push_back(cv::Point(rightEdge, y));
+            }
+        } else {
+            // 第一行直接记录
+            leftLine.push_back(cv::Point(leftEdge, y));
+            rightLine.push_back(cv::Point(rightEdge, y));
+        }
+    }
+
+    // 9. 绘制左右边线
+    for (size_t i = 0; i < leftLine.size(); i++) {
+        circle(result, leftLine[i], 2, cv::Scalar(0, 255, 0), -1);  // 绿色表示左边线
+        circle(result, rightLine[i], 2, cv::Scalar(0, 0, 255), -1); // 红色表示右边线
+        circle(result, (rightLine[i] + leftLine[i]) / 2, 2, cv::Scalar(255, 0, 0), -1); // 红色表示右边线
+    }
+
+    // 10. 连接边线点
+    for (size_t i = 1; i < leftLine.size(); i++) {
+        line(result, leftLine[i-1], leftLine[i], cv::Scalar(0, 255, 0), 2);
+        line(result, rightLine[i-1], rightLine[i], cv::Scalar(0, 0, 255), 2);
+    }
+
+    return result;
+}
 /**
  * @brief 使用大津法计算灰度图像的动态阈值
  * @param src 输入的灰度图像 (cv::Mat, 单通道)
@@ -119,7 +201,7 @@ void binarizeWithOtsu(const cv::Mat& src, cv::Mat& dst) {
 
 int main() {
     // 打开视频文件（替换 "video.mp4" 为你的视频文件路径）
-    cv::VideoCapture cap("../vedio/test.mp4");  // 修改这一行
+    cv::VideoCapture cap("./vedio/test.mp4");  // 修改这一行
     if (!cap.isOpened()) {
         std::cerr << "无法打开视频文件！" << std::endl;
         return -1;
@@ -148,6 +230,10 @@ int main() {
         cv::imshow("color", frame);
         cv::imshow("gray", gray);
         cv::imshow("bin", bin);
+
+        auto res = lineDetection(bin, frame);
+
+        cv::imshow("res", res);
 
         // 按 'q' 退出，delay 控制播放速度
         if (cv::waitKey(delay) == 'q') {
