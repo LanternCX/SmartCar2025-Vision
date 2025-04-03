@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
@@ -38,16 +39,16 @@ int main() {
         cv::imshow("gray", gray);
         cv::imshow("bin", bin);
 
-        auto res = lineDetection(bin, frame);
+        lineDetection(bin, frame);
 
-        cv::imshow("res", res);
+        cv::imshow("res", frame);
 
         // 按 'q' 退出，delay 控制播放速度
         if (cv::waitKey(delay) == 'q') {
             break;
         }
     }
-
+    
     cap.release(); // 释放视频资源
     cv::destroyAllWindows(); // 关闭窗口
     return 0;
