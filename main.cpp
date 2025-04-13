@@ -4,9 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
-#include "Line.h"
-#include "Perspective.h"
-#include "Utils.h"
+#include "Vision.h"
 
 int run(){
     // 打开视频文件（替换 "video.mp4" 为你的视频文件路径）
@@ -33,23 +31,7 @@ int run(){
         
         // cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
 
-        cv::Mat gray;
-        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-        
-        cv::Mat bin;
-        otsu_binarize(gray, bin);
-
-        cv::imshow("color", frame);
-        cv::imshow("gray", gray);
-        cv::imshow("bin", bin);
-
-        cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
-        line_detection(bin, frame, black);
-
-        auto warped = get_perspective(frame);
-
-        cv::imshow("res", frame);
-        cv::imshow("perspective", black);
+        process_img(frame);
 
         // 按 'q' 退出，delay 控制播放速度
         if (cv::waitKey(delay) == 'q') {
