@@ -4,11 +4,11 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
-#include "Utils.h"
+#include "Vision.h"
 
-int main() {
+int run(){
     // 打开视频文件（替换 "video.mp4" 为你的视频文件路径）
-    cv::VideoCapture cap("../vedio/test.mp4");  // 修改这一行
+    cv::VideoCapture cap(2);  // 修改这一行
     if (!cap.isOpened()) {
         std::cerr << "无法打开视频文件！" << std::endl;
         return -1;
@@ -20,6 +20,8 @@ int main() {
     // fps = 15;
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
 
+    init_perspective();
+
     while (true) {
         cap >> frame;
         if (frame.empty()) {
@@ -27,21 +29,9 @@ int main() {
             break;
         }
         
-        cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
+        // cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
 
-        cv::Mat gray;
-        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-        
-        cv::Mat bin;
-        binarizeWithOtsu(gray, bin);
-
-        cv::imshow("color", frame);
-        cv::imshow("gray", gray);
-        cv::imshow("bin", bin);
-
-        lineDetection(bin, frame);
-
-        cv::imshow("res", frame);
+        process_img(frame);
 
         // 按 'q' 退出，delay 控制播放速度
         if (cv::waitKey(delay) == 'q') {
@@ -52,4 +42,8 @@ int main() {
     cap.release(); // 释放视频资源
     cv::destroyAllWindows(); // 关闭窗口
     return 0;
+}
+
+int main() {
+    return run();
 }

@@ -2,29 +2,47 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <vector>
-#include "Line.h"
+
+#include "Vision.h"
+
+/**
+ * 扫线相关函数
+ */
 
 std::vector<int> leftX;  
 std::vector<int> rightX;
 
-void drawBorder(cv::Mat& image) {
+/**
+ * @brief 给图像绘制黑色边框
+ * @param image 输入的图像
+ * @return none
+ * @author Cao Xin
+ * @date 2025-04-03
+ */
+void draw_border(cv::Mat& image) {
     if (image.empty()) return;
     // 画矩形框
     cv::rectangle(image, cv::Point(0, 0), cv::Point(image.cols-1, image.rows-1), cv::Scalar(0), 1);
 }
 
-void lineDetection(cv::Mat binary, cv::Mat& src) {
-    // 输入验证
-    if (binary.empty() || src.empty() || binary.type() != CV_8UC1) {
-        return;
-    }
+/**
+ * @brief 八邻域找左右边线
+ * @param binary 输入的二值化图像
+ * @param src 原始图像指针, 会向原始图像绘制扫线结果
+ * @return none
+ * @author Cao Xin
+ * @date 2025-04-03
+ */
+line_result line_detection(cv::Mat binary, cv::Mat& src) {
+    line_result res;
 
     // 确保图像尺寸匹配
     if (binary.size() != src.size()) {
+        std::cout << "resize\n";
         cv::resize(src, src, binary.size());
     }
 
-    drawBorder(binary);
+    draw_border(binary);
 
     uchar * frame = binary.data;
     // 图像尺寸
@@ -41,7 +59,8 @@ void lineDetection(cv::Mat binary, cv::Mat& src) {
 
     // 选取扫描起始行
     int startRow = height - 10;
-    cv::line(src, cv::Point(0, startRow), cv::Point(width - 1, startRow), cv::Scalar(0, 255, 255), 5);
+    cv::line(src, cv::Point(0, startRow), cv::Point(width - 1, startRow), cv::Scalar(255, 255, 0), 2);
+    cv::line(src, cv::Point(width / 2, startRow), cv::Point(width / 2, 1), cv::Scalar(255, 255, 0), 2);
         
     int midCol = width / 2;
 
@@ -72,7 +91,6 @@ void lineDetection(cv::Mat binary, cv::Mat& src) {
         for(int i = startRow; i > 0; i--){
             if(frame[getIdx(i, 0)] == 255 && frame[getIdx(i - 1, 0)] == 0){
                 leftStart = cv::Point(0, i - 1);
-                std::cout << "found left idx: " << i << '\n';
                 break;
             }
         }
@@ -83,7 +101,6 @@ void lineDetection(cv::Mat binary, cv::Mat& src) {
         for(int i = startRow; i > 0; i--){
             if(frame[getIdx(i, width - 1)] == 255 && frame[getIdx(i - 1, width - 1)] == 0){
                 rightStart = cv::Point(width - 1, i - 1);
-                std::cout << "found right idx: " << i << '\n';
                 break;
             }
         }
@@ -112,14 +129,14 @@ void lineDetection(cv::Mat binary, cv::Mat& src) {
         // 左边扫描
         std::vector<cv::Point> leftCandidates;
         for (int i = 0; i < 8; i++) {
-            // 当前八领域检查的点
+            // 当前八邻域检查的点
             int nowX = leftCenter.x + seedsL[i][0];
             int nowY = leftCenter.y + seedsL[i][1];
             if (nowX < 0 || nowX >= width || nowY < 0 || nowY >= height){
                 continue;
             }
 
-            // 下一个八领域检查的点
+            // 下一个八邻域检查的点
             int nextIdx = (i + 1) % 8;
             int nextX = leftCenter.x + seedsL[nextIdx][0];
             int nextY = leftCenter.y + seedsL[nextIdx][1];
@@ -182,16 +199,28 @@ void lineDetection(cv::Mat binary, cv::Mat& src) {
         }
     }
 
-    // 画出边线
-    for (int y = 0; y < height; y++) {
-        if (leftX[y] != -1) {
-            cv::circle(src, cv::Point(leftX[y], y), 2, cv::Scalar(0, 0, 255), -1);
-        }
-        if (rightX[y] != -1) {
-            cv::circle(src, cv::Point(rightX[y], y), 2, cv::Scalar(255, 0, 0), -1);
-        }
-        if (leftX[y] != -1 && rightX[y] != -1) {
-            cv::circle(src, cv::Point((rightX[y] + leftX[y]) / 2, y), 2, cv::Scalar(0, 255, 0), -1);
+    // 处理出中线
+    std::vector<int> center = std::vector<int>(height - 1, -1);
+    for(int y = 0; y < height; y++){
+        center[y] = (rightX[y] + leftX[y]) / 2;
+    }
+
+    if(VISION_DEBUG){
+        // 画出边线
+        for (int y = 0; y < height; y++) {
+            if (leftX[y] != -1) {
+                cv::circle(src, cv::Point(leftX[y], y), 2, cv::Scalar(0, 0, 255), -1);
+            }
+            if (rightX[y] != -1) {
+                cv::circle(src, cv::Point(rightX[y], y), 2, cv::Scalar(255, 0, 0), -1);
+            }
+            if (leftX[y] != -1 && rightX[y] != -1) {
+                cv::circle(src, cv::Point((rightX[y] + leftX[y]) / 2, y), 2, cv::Scalar(0, 255, 0), -1);
+            }
         }
     }
+
+    res = {leftX, rightX, center};
+    // 返回中线
+    return res;
 }
