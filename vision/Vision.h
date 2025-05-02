@@ -16,5 +16,5 @@ typedef struct{
 }vision_result;
 
 vision_result process_img(cv::Mat frame);
-
+void draw_line(std::vector<int> line, cv::Mat& image);
 #endif
