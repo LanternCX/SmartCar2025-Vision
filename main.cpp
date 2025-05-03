@@ -15,7 +15,7 @@ int run(){
 
     cv::Mat frame;
     double fps = cap.get(cv::CAP_PROP_FPS);
-    // fps = 30;
+    fps = 15;
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
 
     init_perspective();

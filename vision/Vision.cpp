@@ -1,3 +1,4 @@
+#include <opencv2/core/types.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -73,16 +74,33 @@ vision_result process_img(cv::Mat frame){
     cv::Point start = {width / 2, height - 10};
     line_result line = find_lines(gray, start);
 
-    
+    // 三角滤波
+    blur_points(line.left, line.left, 15);
+    blur_points(line.right, line.right, 15);
+
+    // 等距采样
+    std::vector<cv::Point> temp;
+    resample_points(line.left, temp, 3.0f);
+    line.left = temp;
+    resample_points(line.right, temp, 3.0f);
+    line.right = temp;
+
+    // 获取点集局部角度变化率
+    line_angle_result angle;
+    get_line_angle(line.left, angle.left, (5.0f / 3.0f));
+    get_line_angle(line.right, angle.right, (5.0f / 3.0f));
+
+    // 局部角度变化率非极大值抑制
+    filter_line_angle(angle.left, angle.left, 5);
+    filter_line_angle(angle.right, angle.right, 5);
+
     if(VISION_DEBUG){
         for(cv::Point pts : line.left){
             cv::circle(frame, pts, 2, cv::Vec3b(255, 0, 0), -1);
         }
-
         for(cv::Point pts : line.right){
             cv::circle(frame, pts, 2, cv::Vec3b(0, 255, 0), -1);
         }
-
         cv::imshow("Debug", frame);
     }
     return {1, LINE};
