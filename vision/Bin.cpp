@@ -130,7 +130,8 @@ void otsu_binarize(const cv::Mat& src, cv::Mat& dst, cv::Point topLeft, cv::Poin
     }
 
     // 计算大津法阈值
-    uint8_t threshold = otsu_threshold(src, topLeft, bottomRight);
+    int threshold = otsu_threshold(src, topLeft, bottomRight);
+    threshold = std::max(1, threshold);
 
     // 创建输出图像，初始化为全黑
     // dst = cv::Mat::zeros(src.size(), CV_8UC1);

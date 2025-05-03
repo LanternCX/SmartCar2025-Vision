@@ -7,6 +7,7 @@
 
 #include "Perspective.h"
 #include "Vision.h"
+#include "Denoise.h"
 
 void draw_line(std::vector<int> line, cv::Mat& image){
     for(size_t y = 0; y < line.size(); y++){
@@ -54,18 +55,25 @@ bool is_line(const std::vector<cv::Point2f>& points, float threshold = 3.0) {
 
 vision_result process_img(cv::Mat frame){
 
+    // 彩色转灰度
     cv::Mat gray;
     cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
 
+    // 图像降噪
+    // denoise(gray);
+
+    // 获取长宽
     int height = frame.cols;
     int width = frame.rows;
     if(width < height){
         std::swap(height, width);
     }
 
+    // 扫线
     cv::Point start = {width / 2, height - 10};
     line_result line = find_lines(gray, start);
 
+    
     if(VISION_DEBUG){
         for(cv::Point pts : line.left){
             cv::circle(frame, pts, 2, cv::Vec3b(255, 0, 0), -1);

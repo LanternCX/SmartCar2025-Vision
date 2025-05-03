@@ -15,5 +15,5 @@ typedef struct{
     std::vector<cv::Point> center;
 }line_result;
 
-line_result find_lines(cv::Mat img, cv::Point start, int block_size = 7, int clip_value = 20, int max_points = 500) ;
+line_result find_lines(cv::Mat img, cv::Point start, int block_size = 7, int clip_value = 20, int max_points = 1000) ;
 #endif

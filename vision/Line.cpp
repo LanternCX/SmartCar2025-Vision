@@ -3,6 +3,7 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <vector>
@@ -73,10 +74,10 @@ line_result find_lines(cv::Mat img, cv::Point start, int block_size, int clip_va
 
         int x = start.x;
         int y = start.y;
-        int button_thres = otsu_threshold(img, {0, y - 5}, {img.cols, y + 5});
+        otsu_binarize(img, img, {0, y - 5}, {img.cols, y + 5});
         while(x < img.cols && x >= 0){
             int val = img.at<uchar>(y, x);
-            if(val > button_thres){
+            if(val > 0){
                 x += mode ? -1 : 1;
             }else{
                 break;
@@ -92,8 +93,7 @@ line_result find_lines(cv::Mat img, cv::Point start, int block_size, int clip_va
             // }
             cv::Point pts0 = {std::max(x - half, 0), std::max(y - half, 0)};
             cv::Point pts1 = {std::min(x + half, img.cols), std::min(y + half, img.rows)};
-            int local_thres = otsu_threshold(img, pts0, pts1);
-            local_thres = std::max(1, local_thres);
+            otsu_binarize(img, img, pts0, pts1);
             
             // 获取前方和侧方像素值
             int front_value = img.at<uchar>(y + dir_front[dir][1], x + dir_front[dir][0]);
@@ -101,18 +101,19 @@ line_result find_lines(cv::Mat img, cv::Point start, int block_size, int clip_va
                              ? img.at<uchar>(y + dir_frontleft[dir][1], x + dir_frontleft[dir][0])
                              : img.at<uchar>(y + dir_frontright[dir][1], x + dir_frontright[dir][0]);
             
-            if (front_value < local_thres) {
+            if (front_value < 255) {
+                // 前方是黑色就转弯
                 dir = mode ? (dir + 1) % 4 : (dir + 3) % 4;
                 turn++;
-            } else if (side_value < local_thres) {
-                // 侧方是黑色，前进
+            } else if (side_value < 255) {
+                // 侧方是黑色就前进
                 x += dir_front[dir][0];
                 y += dir_front[dir][1];
                 current_line.push_back({x, y});
                 step++;
                 turn = 0;
             } else {
-                // 侧方是白色，朝侧方移动并转向
+                // 前方和侧方都是是白色，朝侧方移动并转向
                 x += mode ? dir_frontleft[dir][0] : dir_frontright[dir][0];
                 y += mode ? dir_frontleft[dir][1] : dir_frontright[dir][1];
                 dir = mode ? (dir + 3) % 4 : (dir + 1) % 4;

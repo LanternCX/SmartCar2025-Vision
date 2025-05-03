@@ -7,7 +7,7 @@
 #include "Vision.h"
 
 int run(){
-    cv::VideoCapture cap("../vedio/est.mp4");
+    cv::VideoCapture cap("../vedio/test.mp4");
     if (!cap.isOpened()) {
         std::cerr << "无法打开视频文件！" << std::endl;
         return -1;
@@ -15,7 +15,7 @@ int run(){
 
     cv::Mat frame;
     double fps = cap.get(cv::CAP_PROP_FPS);
-    fps = 15;
+    // fps = 30;
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
 
     init_perspective();
