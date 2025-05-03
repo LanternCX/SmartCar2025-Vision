@@ -1,7 +1,10 @@
 #include <opencv2/opencv.hpp>
 
 /**
- * 大津法二值化相关函数
+ * @file Bin.cpp
+ * @brief 大津法二值化相关操作
+ * @author Cao Xin
+ * @date 2025-04-03
  */
 
 /**
@@ -105,6 +108,7 @@ uint8_t otsu_threshold(const cv::Mat& src, cv::Point topLeft, cv::Point bottomRi
  * @param dst 输出的二值化图像
  * @param topLeft 区域的左上角点（默认值为 (-1, -1) 表示整个图像）
  * @param bottomRight 区域的右下角点（默认值为 (-1, -1) 表示整个图像）
+ * @return none
  * @author Cao Xin
  * @date 2025-04-03
  */

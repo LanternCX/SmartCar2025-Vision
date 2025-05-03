@@ -1,9 +1,22 @@
-#include <opencv2/core/mat.hpp>
-#include <opencv2/core/types.hpp>
-#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
-// 2x2 最小池化
+#include "Denoise.h"
+
+/**
+ * @file Denoise.cpp
+ * @brief 图像降噪相关操作
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
+
+/**
+ * @brief 2x2 最小池化
+ * @param src 输入图像
+ * @param dst 输出图像
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
 void minPool2x2(cv::Mat& src, cv::Mat& dst) {
     CV_Assert(src.type() == CV_8UC1);
     dst = cv::Mat::zeros(src.size(), CV_8UC1);
@@ -25,6 +38,13 @@ void minPool2x2(cv::Mat& src, cv::Mat& dst) {
     }
 }
 
+/**
+ * @brief 3*3 高斯模糊
+ * @param dst 输出图像
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
 void gaussianBlur3x3(cv::Mat& src, cv::Mat& dst) {
     CV_Assert(src.type() == CV_8UC1);
     dst = cv::Mat::zeros(src.size(), CV_8UC1);
@@ -52,6 +72,14 @@ void gaussianBlur3x3(cv::Mat& src, cv::Mat& dst) {
     }
 }
 
+/**
+ * @brief 3*3 腐蚀
+ * @param src 输入图像
+ * @param dst 输出图像
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
 void erode3x3(const cv::Mat& src, cv::Mat& dst) {
     CV_Assert(src.type() == CV_8UC1);
     dst = cv::Mat::zeros(src.size(), CV_8UC1);
@@ -73,6 +101,14 @@ void erode3x3(const cv::Mat& src, cv::Mat& dst) {
     }
 }
 
+/**
+ * @brief 3*3 膨胀
+ * @param src 输入图像
+ * @param dst 输出图像
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
 void dilate3x3(const cv::Mat& src, cv::Mat& dst) {
     CV_Assert(src.type() == CV_8UC1);
     dst = cv::Mat::zeros(src.size(), CV_8UC1);
@@ -94,10 +130,13 @@ void dilate3x3(const cv::Mat& src, cv::Mat& dst) {
     }
 }
 
-
-
-
-// 图像降噪
+/**
+ * @brief 图像降噪
+ * @param image 输入图像
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
 void denoise(cv::Mat& image) {
     CV_Assert(!image.empty() && image.type() == CV_8UC1);
 

@@ -6,6 +6,13 @@
 
 #include "Vision.h"
 
+/**
+ * @file Main.cpp
+ * @brief 主函数文件
+ * @author Cao Xin
+ * @date 2025-04-03
+ */
+
 int run(){
     cv::VideoCapture cap("../vedio/test.mp4");
     if (!cap.isOpened()) {

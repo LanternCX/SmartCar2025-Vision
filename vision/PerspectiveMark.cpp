@@ -2,11 +2,27 @@
 #include <iostream>
 #include <vector>
 
+/**
+ * @file PerspectiveMark.cpp
+ * @brief 图像逆透视标定 (Desktop Only)
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
+
 #include "Perspective.h"
 
 std::vector<cv::Point2f> srcPoints;
 cv::Mat frame, frameCopy;
 
+/**
+ * @brief 鼠标点击事件回调函数
+ * @param event 事件编号
+ * @param x 鼠标坐标 x
+ * @param y 鼠标坐标 y
+ * @return none
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
 void on_mouse(int event, int x, int y, int, void*) {
     if (event == cv::EVENT_LBUTTONDOWN && srcPoints.size() < 4) {
         cv::Point2f pt(x, y);
@@ -17,18 +33,27 @@ void on_mouse(int event, int x, int y, int, void*) {
     }
 }
 
+/**
+ * @brief 逆透视标定主函数
+ * @return none
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
 int mark_square() {
-    cv::VideoCapture cap(0);  // 改成你摄像头编号
+    // 输入源
+    cv::VideoCapture cap(0);
     if (!cap.isOpened()) {
         std::cerr << "无法打开摄像头！" << std::endl;
         return -1;
     }
 
+    // 输入帧
     cap >> frame;
     if (frame.empty()) {
         std::cerr << "无法读取图像！" << std::endl;
         return -1;
     }
+
 
     frameCopy = frame.clone();
     namedWindow("Camera Frame - Select 4 Points", cv::WINDOW_AUTOSIZE);

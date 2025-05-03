@@ -1,141 +1,38 @@
-#include <algorithm>
-#include <opencv2/core/hal/interface.h>
-#include <opencv2/core/mat.hpp>
-#include <opencv2/core/types.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
-#include <iostream>
-#include <vector>
 
+#include "Line.h"
 #include "Vision.h"
+#include "Math.h"
 
 /**
- * @brief 给图像绘制黑色边框
- * @param image 输入的图像
- * @return none
+ * @file Line.cpp
+ * @brief 边线处理相关操作
  * @author Cao Xin
- * @date 2025-04-03
+ * @date 2025-05-03
  */
-void draw_border(cv::Mat& image) {
-    if (image.empty()) return;
-    // 画矩形框
-    cv::rectangle(image, cv::Point(0, 0), cv::Point(image.cols - 1, image.rows - 1), cv::Scalar(0), 10);
-}
-
-/**
- * @brief 迷宫法自适应域值扫线
- * @param img 输入的灰度图像
- * @param start 起始点坐标
- * @param block_size 自适应阈值的局部区域大小，默认为 7
- * @param clip_value 阈值偏移量，类似于曝光
- * @param max_points 最大提取点数
- * @return line_result 扫线结果
- * @author Cao Xin (adapted)
- * @date 2025-05-02
- */
-line_result find_lines(cv::Mat img, cv::Point start, int block_size, int clip_value, int max_points) {
-    cv::Mat temp = cv::Mat::zeros(img.size(), CV_8UC1);
-    // 入参验证
-    if (img.empty() || img.channels() != 1) {
-        throw std::runtime_error("Input image must be a non-empty grayscale image.");
-    }
-    if (block_size < 3 || block_size % 2 == 0) {
-        throw std::runtime_error("block_size must be an odd number >= 3.");
-    }
-    if (max_points <= 0) {
-        throw std::runtime_error("max_points must be positive.");
-    }
-    if (start.x < 0 || start.x >= img.cols || start.y < 0 || start.y >= img.rows) {
-        throw std::runtime_error("Starting point is out of image bounds.");
-    }
-
-    draw_border(img);
-
-    // 方向定义：0:上, 1:右, 2:下, 3:左
-    const int dir_front[4][2] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
-    const int dir_frontleft[4][2] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
-    const int dir_frontright[4][2] = {{1, -1}, {1, 1}, {-1, 1}, {-1, -1}};
-
-    line_result result;
-    result.left.clear();
-    result.right.clear();
-    result.center.clear();
-
-    // 计算局部区域半径
-    int half = block_size / 2;
-
-    // 左右边线巡线
-    // mode-true 左手迷宫法
-    // mode-false 右手迷宫法
-    for (bool mode : {true, false}) {
-        std::vector<cv::Point>& current_line = mode ? result.left : result.right;
-
-        int x = start.x;
-        int y = start.y;
-        otsu_binarize(img, img, {0, y - 5}, {img.cols, y + 5});
-        while(x < img.cols && x >= 0){
-            int val = img.at<uchar>(y, x);
-            if(val > 0){
-                x += mode ? -1 : 1;
-            }else{
-                break;
-            }
-        }
-
-        int dir = 0;
-        int turn = 0;
-        int step = 0;
-        while (step < max_points && half < x && x < img.cols - half && half < y && y < img.rows - half && turn < 4) {
-            // if(!mode){
-            //     std::cout << x << ' ' << y << '\n';
-            // }
-            cv::Point pts0 = {std::max(x - half, 0), std::max(y - half, 0)};
-            cv::Point pts1 = {std::min(x + half, img.cols), std::min(y + half, img.rows)};
-            otsu_binarize(img, img, pts0, pts1);
-            
-            // 获取前方和侧方像素值
-            int front_value = img.at<uchar>(y + dir_front[dir][1], x + dir_front[dir][0]);
-            int side_value = mode
-                             ? img.at<uchar>(y + dir_frontleft[dir][1], x + dir_frontleft[dir][0])
-                             : img.at<uchar>(y + dir_frontright[dir][1], x + dir_frontright[dir][0]);
-            
-            if (front_value < 255) {
-                // 前方是黑色就转弯
-                dir = mode ? (dir + 1) % 4 : (dir + 3) % 4;
-                turn++;
-            } else if (side_value < 255) {
-                // 侧方是黑色就前进
-                x += dir_front[dir][0];
-                y += dir_front[dir][1];
-                current_line.push_back({x, y});
-                step++;
-                turn = 0;
-            } else {
-                // 前方和侧方都是是白色，朝侧方移动并转向
-                x += mode ? dir_frontleft[dir][0] : dir_frontright[dir][0];
-                y += mode ? dir_frontleft[dir][1] : dir_frontright[dir][1];
-                dir = mode ? (dir + 3) % 4 : (dir + 1) % 4;
-                current_line.push_back({x, y});
-                step++;
-                turn = 0;
-            }
-        }
-    }
-    cv::imshow("gray", img);
-    return result;
-}
 
 /**
  * @brief 极大值和极小值限制
  * @param n 需要限制的值
  * @param lower 最小值
  * @param upper 最大值
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
  */
 int clip(int n, int lower, int upper) {
     return std::max(lower, std::min(n, upper));
 }
 
+/**
+ * @brief 点集三角滤波
+ * @param pts_in 输入点集
+ * @param pts_out 输出点集
+ * @param kernel 滤波核大小 奇数
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
 void blur_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>& pts_out, int kernel) {
     assert(kernel % 2 == 1);
     int half = kernel / 2;
@@ -157,7 +54,15 @@ void blur_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>& p
     }
 }
 
-// 点集等距采样
+/**
+ * @brief 点集等距采样
+ * @param pts_in 输入点集
+ * @param pts_out 输出点集
+ * @param dist 采样距离
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
 void resample_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>& pts_out, float dist) {
     if (pts_in.empty()) {
         pts_out.clear();
@@ -191,8 +96,16 @@ void resample_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point
     }
 }
 
-// 点集局部角度变化率
-void get_line_angle(const std::vector<cv::Point>& pts_in, std::vector<float>& angle_out, int dist) {
+/**
+ * @brief 局部角度变化率
+ * @param pts_in 输入点集
+ * @param angle_out 计算得的变化率集
+ * @param dist 采样距离
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
+void get_line_slope(const std::vector<cv::Point>& pts_in, std::vector<float>& angle_out, int dist) {
     int num = pts_in.size();
     angle_out.resize(num);
     for (int i = 0; i < num; i++) {
@@ -221,8 +134,16 @@ void get_line_angle(const std::vector<cv::Point>& pts_in, std::vector<float>& an
     }
 }
 
-// 角度变化率非极大抑制
-void filter_line_angle(const std::vector<float>& angle_in, std::vector<float>& angle_out, int kernel) {
+/**
+ * @brief 角度变化率非极大值一致
+ * @param angle_in 输入变化率集
+ * @param angle_out 抑制后的变化率集
+ * @param kernel 滤波核大小
+ * @return none
+ * @author Cao Xin
+ * @date 2025-05-03
+ */
+void filter_line_slope(const std::vector<float>& angle_in, std::vector<float>& angle_out, int kernel) {
     assert(kernel % 2 == 1);
     int half = kernel / 2;
     int num = angle_in.size();
@@ -237,4 +158,46 @@ void filter_line_angle(const std::vector<float>& angle_in, std::vector<float>& a
             }
         }
     }
+}
+
+/**
+ * @brief 最小二乘法判断直线
+ * @param line 边线
+ * @param image 输入的图像
+ * @return 是否为直线
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
+bool is_line(const std::vector<cv::Point2f>& points, float threshold = 3.0) {
+    // 点数太少默认为曲线
+    if (points.size() < 3) {
+        return false;
+    }
+
+    // 拟合直线
+    line_params params = fit_line(points);
+
+    // 计算每个点到直线的距离
+    float total_distance = 0;
+    if (!params.is_vertical) {
+        // 非垂直线：y = mx + b
+        for (const auto& p : points) {
+            // 点到直线距离公式：|mx - y + b| / sqrt(m^2 + 1)
+            float distance = std::abs(params.slope * p.x - p.y + params.intercept) /
+                           std::sqrt(params.slope * params.slope + 1);
+            total_distance += distance;
+        }
+    } else {
+        // 垂直线：x = c
+        for (const auto& p : points) {
+            float distance = std::abs(p.x - params.c);
+            total_distance += distance;
+        }
+    }
+
+    // 计算平均偏差
+    float avg_distance = total_distance / points.size();
+
+    // 根据阈值判断
+    return avg_distance < threshold;
 }

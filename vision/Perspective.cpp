@@ -7,8 +7,21 @@
 
 #include "Perspective.h"
 
+/**
+ * @file Perspective.cpp
+ * @brief 图像逆透视相关操作
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
+
 cv::Mat perspectiveTransform;
 
+/**
+ * @brief 初始化逆透视矩阵
+ * @return none
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
 void init_perspective(){
     // 源点，手动标定获得，arg = 30 height = 18
     // 左上, 右上, 右下, 左下
@@ -29,6 +42,13 @@ void init_perspective(){
     perspectiveTransform = getPerspectiveTransform(src, dst);
 }
 
+/**
+ * @brief 对图像进行透视变换
+ * @param image 输入的图像
+ * @return 透视变换之后的图像
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
 cv::Mat get_perspective_img(cv::Mat image){
     cv::Mat warped;
     warpPerspective(image, warped, perspectiveTransform, cv::Size(FRAME_WIDTH, FRAME_HEIGHT));
@@ -36,27 +56,29 @@ cv::Mat get_perspective_img(cv::Mat image){
     return warped;
 }
 
-std::vector<int> get_perspective_line(const std::vector<int>& line, cv::Size size) {
+/**
+ * @brief 对点集进行透视变换
+ * @param line 输入的点集
+ * @param size 原图的长宽
+ * @return 透视变换之后的点集
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
+std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, cv::Size size) {
     float height = size.height;
     float width = size.width;
 
     // 计算中心偏移量，方便对齐
-    cv::Point2f center = get_perspective_pt(cv::Point2f(width / 2, height / 2));
+    cv::Point2f center = get_perspective_pt(cv::Point(width / 2, height / 2));
     float dx = center.x - width / 2;
     float dy = center.y - height / 2;
-    
-    // 原点集 
-    std::vector<cv::Point2f> src;
-    for(int y = 0; y < line.size(); y++) {
-        src.push_back(cv::Point2f(line[y], y));
-    }
 
     // 转换后的点集
     std::vector<cv::Point2f> dst;
     cv::perspectiveTransform(src, dst, perspectiveTransform);
     
     // 初始化结果数组，大小与输入line相同
-    std::vector<int> res(line.size(), -1);
+    std::vector<cv::Point> res(src.size());
     
     // 将变换后的点映射回整数数组
     for(size_t i = 0; i < dst.size(); i++) {
@@ -65,20 +87,24 @@ std::vector<int> get_perspective_line(const std::vector<int>& line, cv::Size siz
         
         if(newY >= 0 && newY < static_cast<int>(res.size()) && 
            newX >= 0 && newX < width) {
-            res[newY] = newX;
+            res.push_back({newX, newY});
         }
     }
-    for(auto x : line){
-        std::cout << x << ' ';
-    }
-    std::cout << '\n';
     return res;
 }
 
-cv::Point2f get_perspective_pt(cv::Point2f src){
+/**
+ * @brief 对点进行透视变换
+ * @param line 输入的点集
+ * @param size 原图的长宽
+ * @return 透视变换之后的点集
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
+cv::Point get_perspective_pt(cv::Point src){
     // 转换为输入点数组
-    std::vector<cv::Point2f> srcPoints = {src};
-    std::vector<cv::Point2f> dstPoints;
+    std::vector<cv::Point> srcPoints = {src};
+    std::vector<cv::Point> dstPoints;
     
     // 执行逆透视变换
     cv::perspectiveTransform(srcPoints, dstPoints, perspectiveTransform);

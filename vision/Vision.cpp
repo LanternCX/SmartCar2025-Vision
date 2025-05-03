@@ -1,15 +1,25 @@
-#include <opencv2/core/types.hpp>
-#include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <vector>
 
 #include "Math.h"
-
-#include "Perspective.h"
 #include "Vision.h"
-#include "Denoise.h"
 
+/**
+ * @file Vision.cpp
+ * @brief 图像处理主要操作
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
+
+/**
+ * @brief 绘制边线
+ * @param line 边线
+ * @param image 输入的图像
+ * @return none
+ * @author Cao Xin
+ * @date 2025-04-03
+ */
 void draw_line(std::vector<int> line, cv::Mat& image){
     for(size_t y = 0; y < line.size(); y++){
         if (image.type() == CV_8UC3) {
@@ -20,42 +30,14 @@ void draw_line(std::vector<int> line, cv::Mat& image){
     }
 }
 
-bool is_line(const std::vector<cv::Point2f>& points, float threshold = 3.0) {
-    // 点数太少默认为曲线
-    if (points.size() < 3) {
-        return false;
-    }
-
-    // 拟合直线
-    line_params params = fit_line(points);
-
-    // 计算每个点到直线的距离
-    float total_distance = 0;
-    if (!params.is_vertical) {
-        // 非垂直线：y = mx + b
-        for (const auto& p : points) {
-            // 点到直线距离公式：|mx - y + b| / sqrt(m^2 + 1)
-            float distance = std::abs(params.slope * p.x - p.y + params.intercept) /
-                           std::sqrt(params.slope * params.slope + 1);
-            total_distance += distance;
-        }
-    } else {
-        // 垂直线：x = c
-        for (const auto& p : points) {
-            float distance = std::abs(p.x - params.c);
-            total_distance += distance;
-        }
-    }
-
-    // 计算平均偏差
-    float avg_distance = total_distance / points.size();
-
-    // 根据阈值判断
-    return avg_distance < threshold;
-}
-
+/**
+ * @brief 图像处理主函数
+ * @param frame 输入的图像
+ * @return 中线识别的结果
+ * @author Cao Xin
+ * @date 2025-04-13
+ */
 vision_result process_img(cv::Mat frame){
-
     // 彩色转灰度
     cv::Mat gray;
     cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
@@ -86,13 +68,13 @@ vision_result process_img(cv::Mat frame){
     line.right = temp;
 
     // 获取点集局部角度变化率
-    line_angle_result angle;
-    get_line_angle(line.left, angle.left, (5.0f / 3.0f));
-    get_line_angle(line.right, angle.right, (5.0f / 3.0f));
+    line_slope_result angle;
+    get_line_slope(line.left, angle.left, (5.0f / 3.0f));
+    get_line_slope(line.right, angle.right, (5.0f / 3.0f));
 
     // 局部角度变化率非极大值抑制
-    filter_line_angle(angle.left, angle.left, 5);
-    filter_line_angle(angle.right, angle.right, 5);
+    filter_line_slope(angle.left, angle.left, 5);
+    filter_line_slope(angle.right, angle.right, 5);
 
     if(VISION_DEBUG){
         for(cv::Point pts : line.left){
