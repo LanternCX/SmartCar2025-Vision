@@ -9,5 +9,5 @@
  */
 
 #include <opencv2/opencv.hpp>
-void denoise(cv::Mat& image);
+void denoise(cv::Mat& image, const cv::Point center, int size);
 #endif

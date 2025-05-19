@@ -1,9 +1,16 @@
+#include <opencv2/core/hal/interface.h>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/types.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <vector>
 
+#include "Line.h"
 #include "Math.h"
 #include "Vision.h"
+#include "Cross.h"
 
 /**
  * @file Vision.cpp
@@ -54,36 +61,56 @@ vision_result process_img(cv::Mat frame){
 
     // 扫线
     cv::Point start = {width / 2, height - 10};
-    line_result line = find_lines(gray, start);
+    track_result track = find_lines(gray, start);
 
+    cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
+    cv::Size size(black.rows, black.cols);
+    
     // 三角滤波
-    blur_points(line.left, line.left, 15);
-    blur_points(line.right, line.right, 15);
+    filter_points(track.left.line, track.left.line, 15);
+    filter_points(track.right.line, track.right.line, 15);
 
+    track.left.line = get_perspective_line(track.left.line, size);
+    track.right.line = get_perspective_line(track.right.line, size);
+    
     // 等距采样
     std::vector<cv::Point> temp;
-    resample_points(line.left, temp, 3.0f);
-    line.left = temp;
-    resample_points(line.right, temp, 3.0f);
-    line.right = temp;
+    resample_points(track.left.line, temp, track.left.sample_dist);
+    track.left.line = temp;
+    resample_points(track.right.line, temp, track.right.sample_dist);
+    track.right.line = temp;
 
-    // 获取点集局部角度变化率
-    line_slope_result angle;
-    get_line_slope(line.left, angle.left, (5.0f / 3.0f));
-    get_line_slope(line.right, angle.right, (5.0f / 3.0f));
+    // // 获取点集局部角度变化率
+    // line_slope_result angle;
+    // get_line_slope(track.left.line, track.left.slope, track.left.angle_dist, track.left.sample_dist);
+    // get_line_slope(track.right.line, track.right.slope, track.right.angle_dist, track.right.sample_dist);
 
-    // 局部角度变化率非极大值抑制
-    filter_line_slope(angle.left, angle.left, 5);
-    filter_line_slope(angle.right, angle.right, 5);
+    // // 局部角度变化率非极大值抑制
+    // filter_line_slope(angle.left, angle.left, 5);
+    // filter_line_slope(angle.right, angle.right, 5);
+    
+    // track.left.corner = find_corners(track.left.slope, track.right.angle_dist, track.right.sample_dist);
+    // track.right.corner = find_corners(track.right.slope, track.left.angle_dist, track.left.sample_dist);
+
+    // corss_repair(track);
+    std::vector<cv::Point> corner = find_corners(track.left.line);
 
     if(VISION_DEBUG){
-        for(cv::Point pts : line.left){
-            cv::circle(frame, pts, 2, cv::Vec3b(255, 0, 0), -1);
+        cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
+        
+        for (auto pts : track.left.line) {
+            cv::circle(black, pts, 1, 255);
         }
-        for(cv::Point pts : line.right){
-            cv::circle(frame, pts, 2, cv::Vec3b(0, 255, 0), -1);
+        for (auto pts : track.right.line) {
+            cv::circle(black, pts, 1, 255);
         }
-        cv::imshow("Debug", frame);
+
+        for (auto pts : corner) {
+            cv::circle(black, pts, 4, 255);
+        }
+        cv::imshow("Debug", gray);
+        cv::imshow("IMG", frame);
+        cv::imshow("black", black);
     }
     return {1, LINE};
 }

@@ -26,7 +26,6 @@ cv::Mat frame, frameCopy;
 void on_mouse(int event, int x, int y, int, void*) {
     if (event == cv::EVENT_LBUTTONDOWN && srcPoints.size() < 4) {
         cv::Point2f pt(x, y);
-        std::cout << x << ' ' << y << '\n';
         srcPoints.push_back(pt);
         circle(frameCopy, pt, 1, cv::Scalar(0, 0, 255), cv::FILLED);
         imshow("Camera Frame - Select 4 Points", frameCopy);
@@ -79,8 +78,6 @@ int mark_square() {
         cv::Point2f(FRAME_WIDTH - 1, FRAME_HEIGHT - 1),
         cv::Point2f(0, FRAME_HEIGHT - 1)
     };
-
-    std::cout << srcPoints.data() << '\n';
 
     // 计算变换矩阵
     cv::Mat M = getPerspectiveTransform(srcPoints, dstPoints);

@@ -11,11 +11,11 @@
 #include <opencv2/core/types.hpp>
 #include <opencv2/opencv.hpp>
 
-const int FRAME_WIDTH = 300;
-const int FRAME_HEIGHT = 300;
+const int FRAME_WIDTH = 50;
+const int FRAME_HEIGHT = 50;
 void init_perspective();
 cv::Mat get_perspective_img(cv::Mat image);
-std::vector<int> get_perspective_line(const std::vector<int>& line, cv::Size size);
+std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, cv::Size size);
 cv::Point get_perspective_pt(cv::Point src);
 // void mark_square();
 #endif

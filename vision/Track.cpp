@@ -1,3 +1,4 @@
+#include <opencv2/core/types.hpp>
 #include <opencv2/opencv.hpp>
 
 #include <algorithm>
@@ -36,7 +37,7 @@ void draw_border(cv::Mat& image) {
  * @author Cao Xin
  * @date 2025-05-02
  */
-line_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_points) {
+track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_points) {
     cv::Mat temp = cv::Mat::zeros(img.size(), CV_8UC1);
     // 入参验证
     if (img.empty() || img.channels() != 1) {
@@ -59,10 +60,9 @@ line_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_poi
     const int dir_frontleft[4][2] = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
     const int dir_frontright[4][2] = {{1, -1}, {1, 1}, {-1, 1}, {-1, -1}};
 
-    line_result result;
-    result.left.clear();
-    result.right.clear();
-    result.center.clear();
+    track_result result;
+    result.left.line.clear();
+    result.right.line.clear();
 
     // 计算局部区域半径
     int half = block_size / 2;
@@ -73,10 +73,11 @@ line_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_poi
     // mode-true 左手迷宫法
     // mode-false 右手迷宫法
     for (bool mode : {true, false}) {
-        std::vector<cv::Point>& current_line = mode ? result.left : result.right;
+        std::vector<cv::Point>& current_line = mode ? result.left.line : result.right.line;
 
         int x = start.x;
         int y = start.y;
+
         otsu_binarize(img, img, {0, y - 5}, {img.cols, y + 5});
         while(x < img.cols && x >= 0){
             int val = img.at<uchar>(y, x);
@@ -93,8 +94,10 @@ line_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_poi
         while (step < max_points && half < x && x < img.cols - half && half < y && y < img.rows - half && turn < 4) {
             cv::Point pts0 = {std::max(x - half, 0), std::max(y - half, 0)};
             cv::Point pts1 = {std::min(x + half, img.cols), std::min(y + half, img.rows)};
+
+            // denoise(img, cv::Point(x, y), half);
             otsu_binarize(img, img, pts0, pts1);
-            
+
             // 获取前方和侧方像素值
             int front_value = img.at<uchar>(y + dir_front[dir][1], x + dir_front[dir][0]);
             int side_value = mode

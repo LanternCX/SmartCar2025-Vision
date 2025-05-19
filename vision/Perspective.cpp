@@ -69,20 +69,22 @@ std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, c
     float width = size.width;
 
     // 计算中心偏移量，方便对齐
-    cv::Point2f center = get_perspective_pt(cv::Point(width / 2, height / 2));
+    cv::Point center = get_perspective_pt(cv::Point(width / 2, height / 2));
     float dx = center.x - width / 2;
     float dy = center.y - height / 2;
 
     // 转换后的点集
-    std::vector<cv::Point2f> dst;
-    cv::perspectiveTransform(src, dst, perspectiveTransform);
-    
+    std::vector<cv::Point> dst;
+    for(auto pt : src){
+        dst.push_back(get_perspective_pt(pt));
+    }
+
     // 初始化结果数组，大小与输入line相同
     std::vector<cv::Point> res(src.size());
     
     // 将变换后的点映射回整数数组
     for(size_t i = 0; i < dst.size(); i++) {
-        int newX = static_cast<int>(std::round( dst[i].x - dx));
+        int newX = static_cast<int>(std::round(dst[i].x - dx));
         int newY = static_cast<int>(std::round(dst[i].y - dy));
         
         if(newY >= 0 && newY < static_cast<int>(res.size()) && 
@@ -103,11 +105,10 @@ std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, c
  */
 cv::Point get_perspective_pt(cv::Point src){
     // 转换为输入点数组
-    std::vector<cv::Point> srcPoints = {src};
-    std::vector<cv::Point> dstPoints;
+    std::vector<cv::Point2f> srcPoints = {src};
+    std::vector<cv::Point2f> dstPoints;
     
     // 执行逆透视变换
     cv::perspectiveTransform(srcPoints, dstPoints, perspectiveTransform);
-
     return dstPoints[0];
 }

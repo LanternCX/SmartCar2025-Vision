@@ -19,7 +19,7 @@
  * @author Cao Xin
  * @date 2025-04-05
  */
-float minmax(float a, float min, float max){
+float clip(float a, float min, float max){
     if(a < min){
         return min;
     }
