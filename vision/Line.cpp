@@ -188,39 +188,6 @@ void rebuild_line(const std::vector<float>& angle_in, std::vector<cv::Point>& pt
 }
 
 /**
- * @brief 通过角度变化率判断角点类型
- * @param src 左右边线的局部角度变化率
- * @return 计算出的角点变化率结果
- * @author Cao Xin
- * @date 2025-05-04
- */
-std::vector<cv::Point> find_corners(const std::vector<cv::Point>& points, double angleThresholdDegrees) {
-    std::vector<cv::Point> corners;
-
-    for (size_t i = 1; i + 1 < points.size(); ++i) {
-        cv::Point2f v1 = points[i] - points[i - 1];
-        cv::Point2f v2 = points[i + 1] - points[i];
-
-        double dot = v1.x * v2.x + v1.y * v2.y;
-        double mag1 = std::sqrt(v1.x * v1.x + v1.y * v1.y);
-        double mag2 = std::sqrt(v2.x * v2.x + v2.y * v2.y);
-
-        if (mag1 < 1e-6 || mag2 < 1e-6) continue;
-
-        double cosTheta = dot / (mag1 * mag2);
-        cosTheta = clip(cosTheta, -1.0, 1.0);
-
-        double angle = std::acos(cosTheta) * 180.0 / CV_PI;
-
-        if (angle < 180.0 - angleThresholdDegrees) {
-            corners.push_back(points[i]);
-        }
-    }
-
-    return corners;
-}
-
-/**
  * @brief 重新采样到 line[y] = x 边线表示
  * @param line 边线点集
  * @param size 图像大小
@@ -272,14 +239,6 @@ int get_corner_count(const std::vector<int> &line, const int &threshold) {
 }
 
 /**
- * @brief 判断元素类型
- */
-ElementType get_element_type(const line_result& line, const int ) {
-    
-}
-
-
-/**
  * @brief 最小二乘法判断直线
  * @param line 边线
  * @param image 输入的图像
@@ -287,7 +246,7 @@ ElementType get_element_type(const line_result& line, const int ) {
  * @author Cao Xin
  * @date 2025-04-13
  */
-bool is_line(const std::vector<cv::Point2f>& points, float threshold = 3.0) {
+bool is_line(const std::vector<cv::Point>& points, float threshold) {
     // 点数太少默认为曲线
     if (points.size() < 3) {
         return false;

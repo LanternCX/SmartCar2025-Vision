@@ -80,21 +80,6 @@ vision_result process_img(cv::Mat frame){
     resample_points(track.right.line, temp, track.right.sample_dist);
     track.right.line = temp;
 
-    // // 获取点集局部角度变化率
-    // line_slope_result angle;
-    // get_line_slope(track.left.line, track.left.slope, track.left.angle_dist, track.left.sample_dist);
-    // get_line_slope(track.right.line, track.right.slope, track.right.angle_dist, track.right.sample_dist);
-
-    // // 局部角度变化率非极大值抑制
-    // filter_line_slope(angle.left, angle.left, 5);
-    // filter_line_slope(angle.right, angle.right, 5);
-    
-    // track.left.corner = find_corners(track.left.slope, track.right.angle_dist, track.right.sample_dist);
-    // track.right.corner = find_corners(track.right.slope, track.left.angle_dist, track.left.sample_dist);
-
-    // corss_repair(track);
-    std::vector<cv::Point> corner = find_corners(track.left.line);
-
     if(VISION_DEBUG){
         cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
         
@@ -105,12 +90,7 @@ vision_result process_img(cv::Mat frame){
             cv::circle(black, pts, 1, 255);
         }
 
-        for (auto pts : corner) {
-            cv::circle(black, pts, 4, 255);
-        }
-        cv::imshow("Debug", gray);
-        cv::imshow("IMG", frame);
-        cv::imshow("black", black);
+        // cv::imshow("black", black);
     }
     return {1, LINE};
 }

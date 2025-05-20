@@ -20,6 +20,8 @@ typedef struct{
     line_result left;
     // 右边线
     line_result right;
+
+    ElementType type;
 } track_result;
 
 track_result find_lines(cv::Mat img, cv::Point start, int block_size = 7, int max_points = 1000);

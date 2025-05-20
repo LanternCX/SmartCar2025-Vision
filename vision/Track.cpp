@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 
+#include "Line.h"
 #include "Vision.h"
 
 /**
@@ -127,4 +128,39 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
         }
     }
     return result;
+}
+
+/**
+ * @brief 判断赛道元素类型
+ */
+ElementType get_element_type(track_result &track) {
+    // l, r
+    std::array<int, 2> corner_cnt;
+    line_result left = track.left;
+    line_result right = track.right;
+    corner_cnt[0] = get_corner_count(trans_line(left.line, left.frame_size));
+    corner_cnt[0] = get_corner_count(trans_line(right.line, right.frame_size));
+    
+    if (corner_cnt[0] == 2 && corner_cnt[1] == 2) {
+        track.type = CROSS;
+        return CROSS;
+    }
+
+    if (corner_cnt[0] == 2 && corner_cnt[1] < 2) {
+        track.type = L_RING;
+        return L_RING;
+    }
+
+    if (corner_cnt[0] < 2 && corner_cnt[0] == 2) {
+        track.type = R_RING;
+        return R_RING;
+    }
+    
+    if (!is_line(left.line) || !is_line(right.line)) {
+        track.type = CURVE;
+        return CURVE;
+    }
+
+    track.type = LINE;
+    return LINE;
 }

@@ -28,5 +28,5 @@ struct line_params {
 float clip(float a, float min, float max);
 float min(float a, float b);
 float max(float a, float b);
-line_params fit_line(const std::vector<cv::Point2f>& points);
+line_params fit_line(const std::vector<cv::Point>& points);
 #endif

@@ -12,21 +12,12 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
-/**
- * @brief 左右边线斜率
- */
-typedef struct {
-    // 左边线
-    std::vector<float> left;
-    // 右边线
-    std::vector<float> right;
-} line_slope_result;
-
 enum ElementType {
     LINE,
     CURVE,
     CROSS,
-    
+    L_RING,
+    R_RING
 };
 
 
@@ -37,8 +28,8 @@ typedef struct line_result{
     std::vector<cv::Point> line;
     std::vector<float> slope;
     ElementType type;
-    int angle_dist = 3;
-    int sample_dist = 3;
+    cv::Size frame_size;
+    int sample_dist;
 } line_result;
 
 void filter_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>& pts_out, int kernel);
@@ -46,5 +37,7 @@ void resample_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point
 void get_line_slope(const std::vector<cv::Point>& pts_in, std::vector<float>& angle_out, int angle_dist, int sample_dist);
 void filter_line_slope(const std::vector<float>& angle_in, std::vector<float>& angle_out, int kernel);
 void rebuild_line(const std::vector<float>& angle_in, std::vector<cv::Point>& pts_out, int dist, cv::Point origin);
-std::vector<cv::Point> find_corners(const std::vector<cv::Point>& points, double angleThresholdDegrees = 90.0);
+int get_corner_count(const std::vector<int> &line, const int &threshold = 30);
+bool is_line(const std::vector<cv::Point>& points, float threshold = 3.0);
+std::vector<int> trans_line(const std::vector<cv::Point> &line, const cv::Size &size);
 #endif

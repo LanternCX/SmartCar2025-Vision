@@ -60,7 +60,7 @@ float max(float a, float b){
  * @author Cao Xin
  * @date 2025-04-13
  */
-line_params fit_line(const std::vector<cv::Point2f>& points) {
+line_params fit_line(const std::vector<cv::Point>& points) {
     line_params params = {0.0f, 0.0f, 0.0f, false};
 
     if (points.empty()) {

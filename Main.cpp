@@ -14,21 +14,24 @@
  */
 
 int run(){
-    cv::VideoCapture cap("../vedio/test.mp4");
+    cv::VideoCapture cap(0);
     if (!cap.isOpened()) {
         std::cerr << "无法打开视频文件！" << std::endl;
         return -1;
     }
 
     cv::Mat frame;
-    double fps = cap.get(cv::CAP_PROP_FPS);
+    std::cout << 111 << '\n';
+    // double fps = cap.get(cv::CAP_PROP_FPS);
+    double fps = 30;
     fps = 15;
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
-
+    std::cout << 222 << '\n';
     init_perspective();
 
     while (true) {
         cap >> frame;
+        // cv::imshow("test", frame);
         if (frame.empty()) {
             std::cerr << "无法读取视频帧或视频已结束！" << std::endl;
             break;
