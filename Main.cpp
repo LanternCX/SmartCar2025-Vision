@@ -3,8 +3,10 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <opencv2/videoio.hpp>
 
 #include "Vision.h"
+#include "Perspective.h"
 
 /**
  * @file Main.cpp
@@ -13,31 +15,31 @@
  * @date 2025-04-03
  */
 
-int run(){
-    cv::VideoCapture cap(0);
+int run() {
+    cv::VideoCapture cap(2);
+    // cv::VideoCapture cap("../vedio/test.mp4");
     if (!cap.isOpened()) {
         std::cerr << "无法打开视频文件！" << std::endl;
         return -1;
     }
 
     cv::Mat frame;
-    std::cout << 111 << '\n';
-    // double fps = cap.get(cv::CAP_PROP_FPS);
-    double fps = 30;
+    double fps = cap.get(cv::CAP_PROP_FPS);
+    // double fps = 30;
     fps = 15;
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
-    std::cout << 222 << '\n';
     init_perspective();
 
     while (true) {
         cap >> frame;
-        // cv::imshow("test", frame);
+        cv::imshow("raw", frame);
         if (frame.empty()) {
             std::cerr << "无法读取视频帧或视频已结束！" << std::endl;
             break;
         }
-        
-        cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
+
+        // 不知道为什么 resize 会导致透视变换不可用
+        // cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
 
         process_img(frame);
 
@@ -53,7 +55,9 @@ int run(){
     cv::destroyAllWindows();
     return 0;
 }
-
+int test() {
+    return 0;
+}
 int main() {
     return run();
 }

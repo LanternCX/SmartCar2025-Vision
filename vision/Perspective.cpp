@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 
+#include "Vision.h"
 #include "Perspective.h"
 
 /**
@@ -14,7 +15,7 @@
  * @date 2025-04-13
  */
 
-cv::Mat perspectiveTransform;
+static cv::Mat perspectiveTransform;
 
 /**
  * @brief 初始化逆透视矩阵
@@ -22,14 +23,14 @@ cv::Mat perspectiveTransform;
  * @author Cao Xin
  * @date 2025-04-13
  */
-void init_perspective(){
+void init_perspective() {
     // 源点，手动标定获得，arg = 30 height = 18
     // 左上, 右上, 右下, 左下
     std::vector<cv::Point2f> src = {
-        cv::Point2f(220, 267),
-        cv::Point2f(418, 267),
-        cv::Point2f(502, 462),
-        cv::Point2f(139, 462)
+        cv::Point2f(263, 309),
+        cv::Point2f(379, 310),
+        cv::Point2f(403, 406),
+        cv::Point2f(239, 405) 
     };
 
     // 目标点
@@ -40,6 +41,10 @@ void init_perspective(){
         cv::Point2f(0, FRAME_HEIGHT - 1)
     };
     perspectiveTransform = getPerspectiveTransform(src, dst);
+    if (VISION_DEBUG) {
+        std::cout << "perspectiveTransform: \n";
+        std::cout << perspectiveTransform << '\n';
+    }
 }
 
 /**
@@ -49,10 +54,28 @@ void init_perspective(){
  * @author Cao Xin
  * @date 2025-04-13
  */
-cv::Mat get_perspective_img(cv::Mat image){
+cv::Mat get_perspective_img(cv::Mat frame) {
+    std::vector<cv::Point2f> srcPoints = {
+        cv::Point2f(263, 309),
+        cv::Point2f(379, 310),
+        cv::Point2f(403, 406),
+        cv::Point2f(239, 405) 
+    };
+
+    std::vector<cv::Point2f> dstPoints = {
+        cv::Point2f(0, 0),
+        cv::Point2f(FRAME_WIDTH - 1, 0),
+        cv::Point2f(FRAME_WIDTH - 1, FRAME_HEIGHT - 1),
+        cv::Point2f(0, FRAME_HEIGHT - 1)
+    };
+
+    cv::Mat M = getPerspectiveTransform(srcPoints, dstPoints);
+
+    // 用计算出来的透视变换矩阵对整幅图像进行变换
     cv::Mat warped;
-    warpPerspective(image, warped, perspectiveTransform, cv::Size(FRAME_WIDTH, FRAME_HEIGHT));
-    // cv::warpPerspective(image, warped, perspectiveTransform, image.size());
+    // 输出图像尺寸与原图一致
+    warpPerspective(frame, warped, M, cv::Size(FRAME_WIDTH, FRAME_HEIGHT));
+
     return warped;
 }
 
@@ -68,6 +91,11 @@ std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, c
     float height = size.height;
     float width = size.width;
 
+    if (height > width) {
+        // std::cout << "heigth swap" << '\n';
+        std::swap(height, width);
+    }
+
     // 计算中心偏移量，方便对齐
     cv::Point center = get_perspective_pt(cv::Point(width / 2, height / 2));
     float dx = center.x - width / 2;
@@ -75,8 +103,13 @@ std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, c
 
     // 转换后的点集
     std::vector<cv::Point> dst;
-    for(auto pt : src){
-        dst.push_back(get_perspective_pt(pt));
+    for(cv::Point pt : src) {
+        cv::Point res = get_perspective_pt(pt);
+        // 过滤边缘点，用于排除一些透视变换之后在画布之外的点
+        // if (res.x <= 3 && res.y <= 3) {
+        //     continue;
+        // }
+        dst.push_back(res);
     }
 
     // 初始化结果数组，大小与输入line相同
@@ -103,7 +136,7 @@ std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, c
  * @author Cao Xin
  * @date 2025-04-13
  */
-cv::Point get_perspective_pt(cv::Point src){
+cv::Point get_perspective_pt(cv::Point src) {
     // 转换为输入点数组
     std::vector<cv::Point2f> srcPoints = {src};
     std::vector<cv::Point2f> dstPoints;

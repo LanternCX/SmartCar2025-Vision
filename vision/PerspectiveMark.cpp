@@ -27,6 +27,7 @@ void on_mouse(int event, int x, int y, int, void*) {
     if (event == cv::EVENT_LBUTTONDOWN && srcPoints.size() < 4) {
         cv::Point2f pt(x, y);
         srcPoints.push_back(pt);
+        std::cout << pt.x << ' ' << pt.y << '\n';
         circle(frameCopy, pt, 1, cv::Scalar(0, 0, 255), cv::FILLED);
         imshow("Camera Frame - Select 4 Points", frameCopy);
     }
@@ -40,7 +41,7 @@ void on_mouse(int event, int x, int y, int, void*) {
  */
 int mark_square() {
     // 输入源
-    cv::VideoCapture cap(0);
+    cv::VideoCapture cap(2);
     if (!cap.isOpened()) {
         std::cerr << "无法打开摄像头！" << std::endl;
         return -1;
@@ -65,11 +66,22 @@ int mark_square() {
     }
     // 左上, 右上, 右下, 左下
     std::vector<cv::Point2f> srcPoints = {
-        cv::Point2f(220, 267),
-        cv::Point2f(418, 267),
-        cv::Point2f(502, 463),
-        cv::Point2f(139, 461) 
+        cv::Point2f(263, 309),
+        cv::Point2f(379, 310),
+        cv::Point2f(403, 406),
+        cv::Point2f(239, 405) 
     };
+    /**
+     * 263 308
+     * 379 311
+     * 403 406
+     * 239 405
+     * 
+     * 263 309
+     * 379 310
+     * 403 406
+     * 239 405
+     */
 
     // 左上, 右上, 右下, 左下
     std::vector<cv::Point2f> dstPoints = {

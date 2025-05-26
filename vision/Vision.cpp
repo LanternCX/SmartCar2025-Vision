@@ -9,6 +9,7 @@
 
 #include "Line.h"
 #include "Math.h"
+#include "Perspective.h"
 #include "Vision.h"
 #include "Cross.h"
 
@@ -62,10 +63,11 @@ vision_result process_img(cv::Mat frame){
     // 扫线
     cv::Point start = {width / 2, height - 10};
     track_result track = find_lines(gray, start);
+    
 
     cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
     cv::Size size(black.rows, black.cols);
-    
+
     // 三角滤波
     filter_points(track.left.line, track.left.line, 15);
     filter_points(track.right.line, track.right.line, 15);
@@ -80,17 +82,40 @@ vision_result process_img(cv::Mat frame){
     resample_points(track.right.line, temp, track.right.sample_dist);
     track.right.line = temp;
 
+    // 采样之后好像有一些点的值比较异常所以筛一遍
+    temp.clear();
+    for (auto pts : track.left.line) {
+        if (pts.x <= 3 && pts.y <= 3) {
+            continue;
+        }
+        temp.push_back(pts);
+    }
+    track.left.line = temp;
+
+    temp.clear();
+    for (auto pts : track.right.line) {
+        if (pts.x <= 3 && pts.y <= 3) {
+            continue;
+        }
+        temp.push_back(pts);
+    }
+    track.right.line = temp;
+
+    // 三角滤波
+    filter_points(track.left.line, track.left.line, 15);
+    filter_points(track.right.line, track.right.line, 15);
+
     if(VISION_DEBUG){
         cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
-        
+        std::cout << track.left.line << '\n';
         for (auto pts : track.left.line) {
             cv::circle(black, pts, 1, 255);
         }
+        std::cout << track.right.line << '\n';
         for (auto pts : track.right.line) {
             cv::circle(black, pts, 1, 255);
         }
-
-        // cv::imshow("black", black);
+        cv::imshow("black", black);
     }
     return {1, LINE};
 }

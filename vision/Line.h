@@ -24,12 +24,12 @@ enum ElementType {
 /**
  * @brief 边线数据
  */
-typedef struct line_result{
+typedef struct line_result {
     std::vector<cv::Point> line;
     std::vector<float> slope;
     ElementType type;
     cv::Size frame_size;
-    int sample_dist;
+    int sample_dist = 1;
 } line_result;
 
 void filter_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>& pts_out, int kernel);

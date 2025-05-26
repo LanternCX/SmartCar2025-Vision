@@ -27,7 +27,7 @@ void filter_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>&
     int half = kernel / 2;
     int num = pts_in.size();
     pts_out.resize(num);
-    for (int i = 0; i < num; i++) {
+    for (int i = half; i < num - half; i++) {
         double sum_x = 0;
         double sum_y = 0;
         double weight_sum = 0;
