@@ -50,9 +50,6 @@ vision_result process_img(cv::Mat frame){
     cv::Mat gray;
     cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
 
-    // 图像降噪
-    // denoise(gray);
-
     // 获取长宽
     int height = frame.cols;
     int width = frame.rows;
@@ -63,20 +60,21 @@ vision_result process_img(cv::Mat frame){
     // 扫线
     cv::Point start = {width / 2, height - 10};
     track_result track = find_lines(gray, start);
-    
 
     cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
     cv::Size size(black.rows, black.cols);
 
+    std::vector<cv::Point> temp;
     // 三角滤波
-    filter_points(track.left.line, track.left.line, 15);
-    filter_points(track.right.line, track.right.line, 15);
+    filter_points(track.left.line, temp, 15);
+    track.left.line = temp;
+    filter_points(track.right.line, temp, 15);
+    track.right.line = temp;
 
     track.left.line = get_perspective_line(track.left.line, size);
     track.right.line = get_perspective_line(track.right.line, size);
     
     // 等距采样
-    std::vector<cv::Point> temp;
     resample_points(track.left.line, temp, track.left.sample_dist);
     track.left.line = temp;
     resample_points(track.right.line, temp, track.right.sample_dist);
@@ -84,8 +82,8 @@ vision_result process_img(cv::Mat frame){
 
     // 采样之后好像有一些点的值比较异常所以筛一遍
     temp.clear();
-    for (auto pts : track.left.line) {
-        if (pts.x <= 3 && pts.y <= 3) {
+    for (cv::Point pts : track.left.line) {
+        if (pts.x <= 3 || pts.y <= 3 || pts.x >= width - 3 || pts.y >= width - 3) {
             continue;
         }
         temp.push_back(pts);
@@ -93,8 +91,8 @@ vision_result process_img(cv::Mat frame){
     track.left.line = temp;
 
     temp.clear();
-    for (auto pts : track.right.line) {
-        if (pts.x <= 3 && pts.y <= 3) {
+    for (cv::Point pts : track.right.line) {
+        if (pts.x <= 3 || pts.y <= 3 || pts.x >= width - 3 || pts.y >= width - 3) {
             continue;
         }
         temp.push_back(pts);
@@ -102,16 +100,16 @@ vision_result process_img(cv::Mat frame){
     track.right.line = temp;
 
     // 三角滤波
-    filter_points(track.left.line, track.left.line, 15);
-    filter_points(track.right.line, track.right.line, 15);
+    filter_points(track.left.line, temp, 15);
+    track.left.line = temp;
+    filter_points(track.right.line, temp, 15);
+    track.right.line = temp;
 
     if(VISION_DEBUG){
         cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
-        std::cout << track.left.line << '\n';
         for (auto pts : track.left.line) {
             cv::circle(black, pts, 1, 255);
         }
-        std::cout << track.right.line << '\n';
         for (auto pts : track.right.line) {
             cv::circle(black, pts, 1, 255);
         }
