@@ -195,7 +195,7 @@ void rebuild_line(const std::vector<float>& angle_in, std::vector<cv::Point>& pt
 std::vector<int> trans_line(const std::vector<cv::Point> &line, const cv::Size &size) {
     int height = size.height;
     int width = size.width;
-    std::vector<int> res(height, -1);
+    std::vector<int> res(height + 1, -1);
     for (cv::Point pts : line) {
         if (res[pts.y] != -1) {
             continue;
@@ -221,16 +221,16 @@ int get_corner_count(const std::vector<int> &line, const int &threshold) {
     int cnt = 0;
     // 从近到远找到第一个拐点
     for (int i = 0; i < n; i++) {
-        int next = clip(i, 0, n - 1);
-        if (abs(line[next] - line[i]) > threshold) {
+        int next = clip(i + dist, 0, n - 1);
+        if (std::abs(line[next] - line[i]) > threshold) {
             cnt++;
             break;
         }
     }
     // 从远到近找到第二个拐点
     for (int i = n - 1; i >= 0; i--) {
-        int next = clip(i, 0, n - 1);
-        if (abs(line[next] - line[i]) > threshold) {
+        int next = clip(i - dist, 0, n - 1);
+        if (std::abs(line[next] - line[i]) > threshold) {
             cnt++;
             break;
         }
@@ -240,8 +240,8 @@ int get_corner_count(const std::vector<int> &line, const int &threshold) {
 
 /**
  * @brief 最小二乘法判断直线
- * @param line 边线
- * @param image 输入的图像
+ * @param points 曲线点集
+ * @param threshold 直线阈值
  * @return 是否为直线
  * @author Cao Xin
  * @date 2025-04-13
@@ -275,7 +275,7 @@ bool is_line(const std::vector<cv::Point>& points, float threshold) {
 
     // 计算平均偏差
     float avg_distance = total_distance / points.size();
-
+    std::cout << avg_distance << '\n';
     // 根据阈值判断
     return avg_distance < threshold;
 }

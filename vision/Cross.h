@@ -1,6 +1,4 @@
-#ifndef _CROSS_H_
-#define _CROSS_H_
+#pragma once
 
 #include "Vision.h"
 void corss_repair(track_result track);
-#endif

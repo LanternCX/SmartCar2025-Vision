@@ -1,12 +1,11 @@
-#ifndef _LINE_H_
-#define _LINE_H_
-
 /**
  * @file Line.h
  * @brief 边线处理相关操作头文件
  * @author Cao Xin
  * @date 2025-05-03
  */
+
+#pragma once
 
 #include <opencv2/core/types.hpp>
 #include <opencv2/opencv.hpp>
@@ -38,6 +37,5 @@ void get_line_slope(const std::vector<cv::Point>& pts_in, std::vector<float>& an
 void filter_line_slope(const std::vector<float>& angle_in, std::vector<float>& angle_out, int kernel);
 void rebuild_line(const std::vector<float>& angle_in, std::vector<cv::Point>& pts_out, int dist, cv::Point origin);
 int get_corner_count(const std::vector<int> &line, const int &threshold = 30);
-bool is_line(const std::vector<cv::Point>& points, float threshold = 3.0);
+bool is_line(const std::vector<cv::Point>& points, float threshold = 200.0);
 std::vector<int> trans_line(const std::vector<cv::Point> &line, const cv::Size &size);
-#endif

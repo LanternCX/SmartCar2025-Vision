@@ -1,12 +1,11 @@
-#ifndef _PERSPECTIVE_H_
-#define _PERSPECTIVE_H_
-
 /**
  * @file Perspective.h
  * @brief 图像逆透视相关操作头文件
  * @author Cao Xin
  * @date 2025-04-13
  */
+
+#pragma once
 
 #include <opencv2/core/types.hpp>
 #include <opencv2/opencv.hpp>
@@ -19,4 +18,3 @@ std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, c
 cv::Point get_perspective_pt(cv::Point src);
 int mark_square();
 // void mark_square();
-#endif
