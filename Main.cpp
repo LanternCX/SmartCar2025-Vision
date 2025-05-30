@@ -28,11 +28,11 @@ int run() {
     // double fps = 30;
     fps = 15;
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
+
     init_perspective();
 
     while (true) {
         cap >> frame;
-        cv::imshow("raw", frame);
         if (frame.empty()) {
             std::cerr << "无法读取视频帧或视频已结束！" << std::endl;
             break;
@@ -41,6 +41,11 @@ int run() {
         // 不知道为什么 resize 会导致透视变换不可用
         // cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
 
+        // double alpha = 1.0;
+        // int beta = 50;
+        // frame.convertTo(frame, -1, alpha, beta);
+
+        cv::imshow("raw", frame);
         process_img(frame);
 
         // 按 'q' 退出，delay 控制播放速度

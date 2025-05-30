@@ -7,6 +7,8 @@
 
 #include "Line.h"
 #include "Vision.h"
+#include "Math.h"
+#include "Debug.h"
 
 /**
  * @file Track.cpp
@@ -156,9 +158,17 @@ ElementType get_element_type(track_result &track) {
         return R_RING;
     }
     
-    if (!is_line(left.line) || !is_line(right.line)) {
-        track.type = CURVE;
-        return CURVE;
+    line_params left_res = fit_line(left.line);
+    line_params right_res = fit_line(right.line);
+
+    if (left_res.slope > 0.15) {
+        track.type = R_CURVE;
+        return R_CURVE;
+    }
+
+    if (right_res.slope < -0.15) {
+        track.type = L_CURVE;
+        return L_CURVE;
     }
 
     track.type = LINE;

@@ -13,7 +13,8 @@
 
 enum ElementType {
     LINE,
-    CURVE,
+    L_CURVE,
+    R_CURVE,
     CROSS,
     L_RING,
     R_RING
