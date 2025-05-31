@@ -46,7 +46,9 @@ int run() {
         // frame.convertTo(frame, -1, alpha, beta);
 
         cv::imshow("raw", frame);
+        cv::imshow("per", get_perspective_img(frame));
         process_img(frame);
+        
 
         // 按 'q' 退出，delay 控制播放速度
         if (cv::waitKey(delay) == 'q') {
@@ -61,6 +63,7 @@ int run() {
     return 0;
 }
 int test() {
+    mark_square();
     return 0;
 }
 int main() {

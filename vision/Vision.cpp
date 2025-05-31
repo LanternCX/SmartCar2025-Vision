@@ -102,12 +102,13 @@ vision_result process_img(cv::Mat frame){
     track.right.line = temp;
 
     // 三角滤波
-    filter_points(track.left.line, temp, 15);
+    filter_points(track.left.line, temp, 35);
     track.left.line = temp;
-    filter_points(track.right.line, temp, 15);
+    filter_points(track.right.line, temp, 35);
     track.right.line = temp;
 
-    auto type = get_element_type(track);
+    // 元素识别
+    ElementType type = get_element_type(track);
     debug(type);
 
     if(VISION_DEBUG){

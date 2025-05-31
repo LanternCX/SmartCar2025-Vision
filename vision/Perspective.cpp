@@ -1,3 +1,4 @@
+#include <cmath>
 #include <opencv2/core.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
@@ -27,10 +28,10 @@ void init_perspective() {
     // 源点，手动标定获得，arg = 30 height = 18
     // 左上, 右上, 右下, 左下
     std::vector<cv::Point2f> src = {
-        cv::Point2f(263, 309),
-        cv::Point2f(379, 310),
-        cv::Point2f(403, 406),
-        cv::Point2f(239, 405) 
+        cv::Point2f(271, 317),
+        cv::Point2f(372, 317),
+        cv::Point2f(393, 387),
+        cv::Point2f(252, 387) 
     };
 
     // 目标点
@@ -56,10 +57,10 @@ void init_perspective() {
  */
 cv::Mat get_perspective_img(cv::Mat frame) {
     std::vector<cv::Point2f> srcPoints = {
-        cv::Point2f(263, 309),
-        cv::Point2f(379, 310),
-        cv::Point2f(403, 406),
-        cv::Point2f(239, 405) 
+        cv::Point2f(271, 317),
+        cv::Point2f(372, 317),
+        cv::Point2f(393, 387),
+        cv::Point2f(252, 387) 
     };
 
     std::vector<cv::Point2f> dstPoints = {
@@ -98,34 +99,35 @@ std::vector<cv::Point> get_perspective_line(const std::vector<cv::Point>& src, c
 
     // 计算中心偏移量，方便对齐
     cv::Point center = get_perspective_pt(cv::Point(width / 2, height / 2));
-    float dx = center.x - width / 2;
-    float dy = center.y - height / 2;
+    int dx = center.x - width / 2;
+    int dy = center.y - height / 2;
 
+    int margin = 10;
     // 转换后的点集
     std::vector<cv::Point> dst;
     for(cv::Point pt : src) {
+        
         cv::Point res = get_perspective_pt(pt);
-        // 过滤边缘点，用于排除一些透视变换之后在画布之外的点
-        // if (res.x <= 3 && res.y <= 3) {
+        // // 边缘全丢线的点没有意义直接丢弃
+        // if (pt.y < margin && pt.x < margin || pt.y > height - margin && pt.x > width - margin) {
         //     continue;
         // }
-        dst.push_back(res);
-    }
 
-    // 初始化结果数组，大小与输入line相同
-    std::vector<cv::Point> res(src.size());
-    
-    // 将变换后的点映射回整数数组
-    for(size_t i = 0; i < dst.size(); i++) {
-        int newX = static_cast<int>(std::round(dst[i].x - dx));
-        int newY = static_cast<int>(std::round(dst[i].y - dy));
+        // // 在 x 方向上丢线只对 y 进行透视变换
+        // if (pt.x < margin || pt.x > width - margin) {
+        //     dst.push_back(cv::Point(pt.x, res.y - dy));
+        //     continue;
+        // }
+
+        // // 在 y 方向上丢线只对 x 进行透视变换
+        // if (pt.y < margin  || pt.y > height - margin) {
+        //     dst.push_back(cv::Point(pt.x - dx, res.y));
+        //     continue;
+        // }
         
-        if(newY >= 0 && newY < static_cast<int>(res.size()) && 
-           newX >= 0 && newX < width) {
-            res.push_back({newX, newY});
-        }
+        dst.push_back(cv::Point(res.x - dx, res.y - dy));
     }
-    return res;
+    return dst;
 }
 
 /**

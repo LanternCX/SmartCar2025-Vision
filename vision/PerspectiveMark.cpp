@@ -66,10 +66,10 @@ int mark_square() {
     }
     // 左上, 右上, 右下, 左下
     std::vector<cv::Point2f> srcPoints = {
-        cv::Point2f(263, 309),
-        cv::Point2f(379, 310),
-        cv::Point2f(403, 406),
-        cv::Point2f(239, 405) 
+        cv::Point2f(271, 317),
+        cv::Point2f(372, 317),
+        cv::Point2f(393, 387),
+        cv::Point2f(252, 387) 
     };
     /**
      * 263 308
@@ -81,6 +81,11 @@ int mark_square() {
      * 379 310
      * 403 406
      * 239 405
+     * 
+     * 271 317
+     * 372 317
+     * 393 387
+     * 252 387
      */
 
     // 左上, 右上, 右下, 左下
