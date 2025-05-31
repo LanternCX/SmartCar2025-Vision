@@ -63,8 +63,8 @@ vision_result process_img(cv::Mat frame){
     cv::Point start = {width / 2, height - 10};
     track_result track = find_lines(gray, start);
 
-    cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
-    cv::Size size(black.rows, black.cols);
+    track.left.frame_size = frame.size();
+    track.right.frame_size = frame.size();
 
     std::vector<cv::Point> temp;
     // 三角滤波
@@ -73,8 +73,9 @@ vision_result process_img(cv::Mat frame){
     filter_points(track.right.line, temp, 15);
     track.right.line = temp;
 
-    track.left.line = get_perspective_line(track.left.line, size);
-    track.right.line = get_perspective_line(track.right.line, size);
+    // 透视变换
+    track.left.line = get_perspective_line(track.left.line, frame.size());
+    track.right.line = get_perspective_line(track.right.line, frame.size());
     
     // 等距采样
     resample_points(track.left.line, temp, track.left.sample_dist);

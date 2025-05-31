@@ -20,7 +20,6 @@ enum ElementType {
     R_RING
 };
 
-
 /**
  * @brief 边线数据
  */
@@ -37,6 +36,6 @@ void resample_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point
 void get_line_slope(const std::vector<cv::Point>& pts_in, std::vector<float>& angle_out, int angle_dist, int sample_dist);
 void filter_line_slope(const std::vector<float>& angle_in, std::vector<float>& angle_out, int kernel);
 void rebuild_line(const std::vector<float>& angle_in, std::vector<cv::Point>& pts_out, int dist, cv::Point origin);
-int get_corner_count(const std::vector<int> &line, const int &threshold = 30);
+int get_corner_count(const std::vector<int> &line, const int &threshold = 100);
 bool is_line(const std::vector<cv::Point>& points, float threshold = 200.0);
 std::vector<int> trans_line(const std::vector<cv::Point> &line, const cv::Size &size);

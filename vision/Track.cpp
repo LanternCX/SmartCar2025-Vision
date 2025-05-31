@@ -141,7 +141,7 @@ ElementType get_element_type(track_result &track) {
     line_result left = track.left;
     line_result right = track.right;
     corner_cnt[0] = get_corner_count(trans_line(left.line, left.frame_size));
-    corner_cnt[0] = get_corner_count(trans_line(right.line, right.frame_size));
+    corner_cnt[1] = get_corner_count(trans_line(right.line, right.frame_size));
     
     if (corner_cnt[0] == 2 && corner_cnt[1] == 2) {
         track.type = CROSS;

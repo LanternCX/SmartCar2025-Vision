@@ -5,6 +5,7 @@
 #include "Line.h"
 #include "Vision.h"
 #include "Math.h"
+#include "Debug.h"
 
 /**
  * @file Line.cpp
