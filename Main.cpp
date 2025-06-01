@@ -6,7 +6,7 @@
 #include <opencv2/videoio.hpp>
 
 #include "Vision.h"
-#include "State.h"
+#include "Type.h"
 #include "Perspective.h"
 
 /**

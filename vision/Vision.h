@@ -8,11 +8,12 @@
 #pragma once
 
 #include "Bin.h"
-#include "Track.h"
+#include "Type.h"
 #include "Denoise.h"
 #include "Line.h"
 #include "Perspective.h"
 #include "Ring.h"
+#include "Track.h"
 
 #define VISION_DEBUG 1
 

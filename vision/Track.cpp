@@ -10,6 +10,7 @@
 #include "Vision.h"
 #include "Math.h"
 #include "Debug.h"
+#include "Track.h"
 
 /**
  * @file Track.cpp
@@ -172,12 +173,12 @@ ElementType get_element_type(track_result &track) {
         return CROSS_BEGIN;
     }
 
-    if (corner_cnt[0] == 2 && corner_cnt[1] < 2) {
+    if (corner_cnt[0] == 2 && corner_cnt[1] == 0) {
         track.type = L_RING_BEGIN;
         return L_RING_BEGIN;
     }
 
-    if (corner_cnt[0] < 2 && corner_cnt[1] == 2) {
+    if (corner_cnt[0] == 0 && corner_cnt[1] == 2) {
         track.type = R_RING_BEGIN;
         return R_RING_BEGIN;
     }

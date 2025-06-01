@@ -1,4 +1,5 @@
 #include "Line.h"
+#include "Type.h"
 
 /**
  * @brief 赛道状态单例，主要维护前几帧率的赛道的各种状态提供给状态机使用
@@ -9,7 +10,7 @@
 /**
  * @brief 维护的前几帧的赛道状态辅助判断当前赛道状态
  */
-typedef struct track_state {
+typedef struct track_type {
     // 当前的元素类型
     ElementType type;
 
@@ -24,9 +25,9 @@ typedef struct track_state {
 
     // 需要维护的赛道类型数量
     const int length = 10;
-} track_state;
+} track_type;
 
-static track_state state;
+static track_type state;
 
 /**
  * @brief 初始化单例

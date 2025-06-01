@@ -14,7 +14,7 @@
 #include "Vision.h"
 #include "Cross.h"
 #include "Debug.h"
-#include "State.h"
+#include "Type.h"
 
 /**
  * @file Vision.cpp
@@ -31,8 +31,8 @@
  * @author Cao Xin
  * @date 2025-04-03
  */
-void draw_line(std::vector<int> line, cv::Mat& image){
-    for(size_t y = 0; y < line.size(); y++){
+void draw_line(std::vector<int> line, cv::Mat& image) {
+    for(size_t y = 0; y < line.size(); y++) {
         if (image.type() == CV_8UC3) {
             cv::circle(image, cv::Point(line[y], y), 2, cv::Vec3b(255, 255, 255), -1);
         } else {
@@ -48,7 +48,7 @@ void draw_line(std::vector<int> line, cv::Mat& image){
  * @author Cao Xin
  * @date 2025-04-13
  */
-vision_result process_img(cv::Mat frame){
+vision_result process_img(cv::Mat frame) {
     // 彩色转灰度
     cv::Mat gray;
     cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
@@ -56,7 +56,7 @@ vision_result process_img(cv::Mat frame){
     // 获取长宽
     int height = frame.cols;
     int width = frame.rows;
-    if(width < height){
+    if (width < height) {
         std::swap(height, width);
     }
 
@@ -138,10 +138,7 @@ vision_result process_img(cv::Mat frame){
     filter_points(track.right.center, temp, 35);
     track.right.center = temp;
 
-    debug(type);
-    debug(get_track_type());
-
-    if(VISION_DEBUG){
+    if (VISION_DEBUG) {
         cv::Mat left = cv::Mat::zeros(frame.size(), CV_8UC1);
         cv::Mat right = cv::Mat::zeros(frame.size(), CV_8UC1);
 
