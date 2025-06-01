@@ -15,9 +15,28 @@ enum ElementType {
     LINE,
     L_CURVE,
     R_CURVE,
-    CROSS,
-    L_RING,
-    R_RING
+    CROSS_PRE,
+    CROSS_IN,
+    L_RING_PRE,
+    L_RING_IN,
+    L_RING_OUT,
+    R_RING_PRE,
+    R_RING_IN,
+    R_RING_OUT
+};
+
+const std::vector<ElementType> int_to_element = {
+    LINE,
+    L_CURVE,
+    R_CURVE,
+    CROSS_PRE,
+    CROSS_IN,
+    L_RING_PRE,
+    L_RING_IN,
+    L_RING_OUT,
+    R_RING_PRE,
+    R_RING_IN,
+    R_RING_OUT
 };
 
 /**
@@ -36,6 +55,9 @@ void resample_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point
 void get_line_slope(const std::vector<cv::Point>& pts_in, std::vector<float>& angle_out, int angle_dist, int sample_dist);
 void filter_line_slope(const std::vector<float>& angle_in, std::vector<float>& angle_out, int kernel);
 void rebuild_line(const std::vector<float>& angle_in, std::vector<cv::Point>& pts_out, int dist, cv::Point origin);
-int get_corner_count(const std::vector<int> &line, const int &threshold = 100);
+int get_corner_count(const std::vector<int> &line, const int &threshold = 30);
 bool is_line(const std::vector<cv::Point>& points, float threshold = 200.0);
 std::vector<int> trans_line(const std::vector<cv::Point> &line, const cv::Size &size);
+void remove_bound_pts(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>& pts_out, cv::Size size);
+std::vector<cv::Point> sharpen_corners(const std::vector<cv::Point> &inputPts, double angleThreshDeg = 170.0);
+std::vector<cv::Point> mirror_line(const std::vector<cv::Point>& line, cv::Size size);

@@ -77,6 +77,7 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
     // mode-false 右手迷宫法
     for (bool mode : {true, false}) {
         std::vector<cv::Point>& current_line = mode ? result.left.line : result.right.line;
+        current_line.clear();
 
         int x = start.x;
         int y = start.y;
@@ -140,22 +141,29 @@ ElementType get_element_type(track_result &track) {
     std::array<int, 2> corner_cnt;
     line_result left = track.left;
     line_result right = track.right;
+
+    // 镜像右边线使得逻辑统一
+    right.line = mirror_line(right.line, right.frame_size);
+    // std::reverse(right.line.begin(), right.line.end()); 
+    
     corner_cnt[0] = get_corner_count(trans_line(left.line, left.frame_size));
     corner_cnt[1] = get_corner_count(trans_line(right.line, right.frame_size));
+
+    debug(corner_cnt);
     
     if (corner_cnt[0] == 2 && corner_cnt[1] == 2) {
-        track.type = CROSS;
-        return CROSS;
+        track.type = CROSS_PRE;
+        return CROSS_PRE;
     }
 
     if (corner_cnt[0] == 2 && corner_cnt[1] < 2) {
-        track.type = L_RING;
-        return L_RING;
+        track.type = L_RING_PRE;
+        return L_RING_PRE;
     }
 
-    if (corner_cnt[0] < 2 && corner_cnt[0] == 2) {
-        track.type = R_RING;
-        return R_RING;
+    if (corner_cnt[0] < 2 && corner_cnt[1] == 2) {
+        track.type = R_RING_PRE;
+        return R_RING_PRE;
     }
     
     line_params left_res = fit_line(left.line);

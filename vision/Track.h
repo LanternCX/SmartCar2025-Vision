@@ -13,12 +13,14 @@
 /**
  * @brief 左右边线和中线
  */
-typedef struct{
+typedef struct {
     // 左边线
     line_result left;
+    
     // 右边线
     line_result right;
-
+    
+    // 元素类型
     ElementType type;
 } track_result;
 

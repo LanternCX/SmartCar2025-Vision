@@ -6,6 +6,7 @@
 #include <opencv2/videoio.hpp>
 
 #include "Vision.h"
+#include "Statue.h"
 #include "Perspective.h"
 
 /**
@@ -16,7 +17,7 @@
  */
 
 int run() {
-    cv::VideoCapture cap(2);
+    cv::VideoCapture cap(0);
     // cv::VideoCapture cap("../vedio/test.mp4");
     if (!cap.isOpened()) {
         std::cerr << "无法打开视频文件！" << std::endl;
@@ -30,6 +31,7 @@ int run() {
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
 
     init_perspective();
+    init_statue(11);
 
     while (true) {
         cap >> frame;
@@ -46,9 +48,7 @@ int run() {
         // frame.convertTo(frame, -1, alpha, beta);
 
         cv::imshow("raw", frame);
-        cv::imshow("per", get_perspective_img(frame));
         process_img(frame);
-        
 
         // 按 'q' 退出，delay 控制播放速度
         if (cv::waitKey(delay) == 'q') {

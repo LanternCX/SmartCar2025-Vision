@@ -1,4 +1,5 @@
 #include <opencv2/core/types.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 #include <vector>
 
@@ -197,18 +198,22 @@ std::vector<int> trans_line(const std::vector<cv::Point> &line, const cv::Size &
     int height = size.height;
     int width = size.width;
     std::vector<int> res(height + 1, -1);
+    int min_y = height;
     for (cv::Point pts : line) {
-        if (res[pts.y] != -1) {
+        if (res[pts.y] != -1 || pts.y > min_y) {
             continue;
         }
         res[pts.y] = pts.x;
+        min_y = std::min(pts.y, min_y);
     }
-    for (int &x : res) {
+    std::vector<int> temp;
+    for (int x : res) {
         if (x == -1) {
-            x = width / 2;
+            continue;
         }
+        temp.push_back(x);
     }
-    return res;
+    return temp;
 }
 
 /**
@@ -223,7 +228,8 @@ int get_corner_count(const std::vector<int> &line, const int &threshold) {
     // 从近到远找到第一个拐点
     for (int i = 0; i < n; i++) {
         int next = clip(i + dist, 0, n - 1);
-        if (std::abs(line[next] - line[i]) > threshold) {
+        int det = line[i] - line[next];
+        if (det > threshold && det < 60) {
             cnt++;
             break;
         }
@@ -231,11 +237,13 @@ int get_corner_count(const std::vector<int> &line, const int &threshold) {
     // 从远到近找到第二个拐点
     for (int i = n - 1; i >= 0; i--) {
         int next = clip(i - dist, 0, n - 1);
-        if (std::abs(line[next] - line[i]) > threshold) {
+        int det = line[next] - line[i]; 
+        if (det > threshold && det < 60) {
             cnt++;
             break;
         }
     }
+    debug(cnt);
     return cnt;
 }
 
@@ -279,4 +287,50 @@ bool is_line(const std::vector<cv::Point>& points, float threshold) {
     std::cout << avg_distance << '\n';
     // 根据阈值判断
     return avg_distance < threshold;
+}
+
+/**
+ * @brief 移除边界上的点
+ */
+void remove_bound_pts(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>& pts_out, cv::Size size) {
+    int height = size.height;
+    int width = size.width;
+    if(width < height) {
+        std::swap(height, width);
+    }
+    pts_out.clear();
+    for (cv::Point pts : pts_in) {
+        if (pts.x <= 15 || pts.y <= 15 || pts.x >= width - 15 || pts.y >= width - 15) {
+            continue;
+        }
+        pts_out.push_back(pts);
+    }
+}
+
+/**
+ * @brief 镜像翻转边线
+ */
+std::vector<cv::Point> mirror_line(const std::vector<cv::Point>& line, cv::Size size) {
+    std::vector<cv::Point> res;
+    if (line.empty()) {
+        return res;
+    }
+
+    int height = size.height;
+    int width  = size.width;
+    if (width < height) {
+        std::swap(width, height);
+    }
+
+    res.reserve(line.size());
+
+    // 对于每个点 (x, y)，新的 x 坐标为 (width - 1 - x)，y 坐标保持不变
+    // 这样 0 -> width-1, width-1 -> 0, 1 -> width-2, width-2 -> 1, 以此类推
+    for (const auto& pt : line) {
+        int mirroredX = width - 1 - pt.x;
+        mirroredX = clip(mirroredX, 0, width - 1);
+        res.emplace_back(mirroredX, pt.y);
+    }
+
+    return res;
 }

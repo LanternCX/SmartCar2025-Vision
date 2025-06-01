@@ -14,6 +14,7 @@
 #include "Vision.h"
 #include "Cross.h"
 #include "Debug.h"
+#include "Statue.h"
 
 /**
  * @file Vision.cpp
@@ -73,9 +74,39 @@ vision_result process_img(cv::Mat frame){
     filter_points(track.right.line, temp, 15);
     track.right.line = temp;
 
+    // 过滤边缘点
+    remove_bound_pts(track.right.line, temp, frame.size());
+    track.right.line = temp;
+    remove_bound_pts(track.left.line, temp, frame.size());
+    track.left.line = temp;
+
+    // 等距采样
+    resample_points(track.left.line, temp, track.left.sample_dist);
+    track.left.line = temp;
+    resample_points(track.right.line, temp, track.right.sample_dist);
+    track.right.line = temp;
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.line, temp, frame.size());
+    track.right.line = temp;
+    remove_bound_pts(track.left.line, temp, frame.size());
+    track.left.line = temp;
+
+    // 元素识别
+    ElementType type = get_element_type(track);
+
+    change_type_count(type);
+    calc_track_type();
+
     // 透视变换
     track.left.line = get_perspective_line(track.left.line, frame.size());
     track.right.line = get_perspective_line(track.right.line, frame.size());
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.line, temp, frame.size());
+    track.right.line = temp;
+    remove_bound_pts(track.left.line, temp, frame.size());
+    track.left.line = temp;
     
     // 等距采样
     resample_points(track.left.line, temp, track.left.sample_dist);
@@ -83,24 +114,11 @@ vision_result process_img(cv::Mat frame){
     resample_points(track.right.line, temp, track.right.sample_dist);
     track.right.line = temp;
 
-    // 采样之后好像有一些点的值比较异常所以筛一遍
-    temp.clear();
-    for (cv::Point pts : track.left.line) {
-        if (pts.x <= 3 || pts.y <= 3 || pts.x >= width - 3 || pts.y >= width - 3) {
-            continue;
-        }
-        temp.push_back(pts);
-    }
-    track.left.line = temp;
-
-    temp.clear();
-    for (cv::Point pts : track.right.line) {
-        if (pts.x <= 3 || pts.y <= 3 || pts.x >= width - 3 || pts.y >= width - 3) {
-            continue;
-        }
-        temp.push_back(pts);
-    }
+    // 过滤边缘点
+    remove_bound_pts(track.right.line, temp, frame.size());
     track.right.line = temp;
+    remove_bound_pts(track.left.line, temp, frame.size());
+    track.left.line = temp;
 
     // 三角滤波
     filter_points(track.left.line, temp, 35);
@@ -108,19 +126,27 @@ vision_result process_img(cv::Mat frame){
     filter_points(track.right.line, temp, 35);
     track.right.line = temp;
 
-    // 元素识别
-    ElementType type = get_element_type(track);
+    // 过滤边缘点
+    remove_bound_pts(track.right.line, temp, frame.size());
+    track.right.line = temp;
+    remove_bound_pts(track.left.line, temp, frame.size());
+    track.left.line = temp;
+
     debug(type);
+    debug(get_track_type());
 
     if(VISION_DEBUG){
-        cv::Mat black = cv::Mat::zeros(frame.size(), CV_8UC1);
+        cv::Mat left = cv::Mat::zeros(frame.size(), CV_8UC1);
+        cv::Mat right = cv::Mat::zeros(frame.size(), CV_8UC1);
         for (auto pts : track.left.line) {
-            cv::circle(black, pts, 1, 255);
+            cv::circle(left, pts, 1, 255);
         }
+
         for (auto pts : track.right.line) {
-            cv::circle(black, pts, 1, 255);
+            cv::circle(right, pts, 1, 255);
         }
-        cv::imshow("black", black);
+        cv::imshow("left", left);
+        cv::imshow("right", right);
     }
     return {1, LINE};
 }
