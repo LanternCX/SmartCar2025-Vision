@@ -44,6 +44,7 @@ const std::vector<ElementType> int_to_element = {
  */
 typedef struct line_result {
     std::vector<cv::Point> line;
+    std::vector<cv::Point> center;
     std::vector<float> slope;
     ElementType type;
     cv::Size frame_size;

@@ -14,7 +14,7 @@
 #include "Vision.h"
 #include "Cross.h"
 #include "Debug.h"
-#include "Statue.h"
+#include "State.h"
 
 /**
  * @file Vision.cpp
@@ -132,12 +132,64 @@ vision_result process_img(cv::Mat frame){
     remove_bound_pts(track.left.line, temp, frame.size());
     track.left.line = temp;
 
+    // 拟合中线
+    track.left.center.clear();
+    track.left.center = shift_line(track.left.line, 50);
+    track.right.center.clear();
+    track.right.center = shift_line(track.right.line, -50);
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.center, temp, frame.size());
+    track.right.center = temp;
+    remove_bound_pts(track.left.center, temp, frame.size());
+    track.left.center = temp;
+
+    // 三角滤波
+    filter_points(track.left.center, temp, 35);
+    track.left.center = temp;
+    filter_points(track.right.center, temp, 35);
+    track.right.center = temp;
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.center, temp, frame.size());
+    track.right.center = temp;
+    remove_bound_pts(track.left.center, temp, frame.size());
+    track.left.center = temp;
+
+    // 等距采样
+    resample_points(track.left.center, temp, track.left.sample_dist);
+    track.left.center = temp;
+    resample_points(track.right.center, temp, track.right.sample_dist);
+    track.right.center = temp;
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.center, temp, frame.size());
+    track.right.center = temp;
+    remove_bound_pts(track.left.center, temp, frame.size());
+    track.left.center = temp;
+    
+    // 三角滤波
+    filter_points(track.left.center, temp, 35);
+    track.left.center = temp;
+    filter_points(track.right.center, temp, 35);
+    track.right.center = temp;
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.center, temp, frame.size());
+    track.right.center = temp;
+    remove_bound_pts(track.left.center, temp, frame.size());
+    track.left.center = temp;
+
     debug(type);
     debug(get_track_type());
 
     if(VISION_DEBUG){
         cv::Mat left = cv::Mat::zeros(frame.size(), CV_8UC1);
         cv::Mat right = cv::Mat::zeros(frame.size(), CV_8UC1);
+
+        cv::Mat left_center = cv::Mat::zeros(frame.size(), CV_8UC1);
+        cv::Mat right_center = cv::Mat::zeros(frame.size(), CV_8UC1);
+
         for (auto pts : track.left.line) {
             cv::circle(left, pts, 1, 255);
         }
@@ -145,8 +197,19 @@ vision_result process_img(cv::Mat frame){
         for (auto pts : track.right.line) {
             cv::circle(right, pts, 1, 255);
         }
+
+        for (auto pts : track.left.center) {
+            cv::circle(left_center, pts, 1, 255);
+        }
+
+        for (auto pts : track.right.center) {
+            cv::circle(right_center, pts, 1, 255);
+        }
+
         cv::imshow("left", left);
         cv::imshow("right", right);
+        cv::imshow("right-center", right_center);
+        cv::imshow("left-center", left_center);
     }
     return {1, LINE};
 }

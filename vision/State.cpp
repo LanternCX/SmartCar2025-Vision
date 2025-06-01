@@ -64,7 +64,6 @@ ElementType get_track_type(void) {
 
 /**
  * @brief 计算当前赛道状态
- * @return 当前赛道状态
  */
 void calc_track_type(void) {
     // 取前 10 帧计算中出现最多的赛道类型作为当前赛道元素
