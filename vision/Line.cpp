@@ -226,26 +226,16 @@ int get_corner_count(const std::vector<int> &line, const int &threshold) {
     int n = line.size();
     int dist = 15;
     int cnt = 0;
-    // 从近到远找到第一个拐点
-    for (int i = 0; i < n; i++) {
-        int next = clip(i + dist, 0, n - 1);
-        int det = line[i] - line[next];
-        if (det > threshold && det < 60) {
-            cnt++;
-            break;
+    for (int i = 0; i < n - dist; i++) {
+        int next = i + dist;
+        if (cnt % 2 == 0) {
+            cnt += line[i] - line[next] > threshold;
+        }
+        if (cnt % 2 == 1) {
+            cnt += line[next] - line[i] > threshold;
         }
     }
-    // 从远到近找到第二个拐点
-    for (int i = n - 1; i >= 0; i--) {
-        int next = clip(i - dist, 0, n - 1);
-        int det = line[next] - line[i]; 
-        if (det > threshold && det < 60) {
-            cnt++;
-            break;
-        }
-    }
-    debug(cnt);
-    return cnt;
+    return cnt / 2;
 }
 
 /**

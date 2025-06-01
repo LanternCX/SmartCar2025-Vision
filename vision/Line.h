@@ -15,12 +15,12 @@ enum ElementType {
     LINE,
     L_CURVE,
     R_CURVE,
-    CROSS_PRE,
+    CROSS_BEGIN,
     CROSS_IN,
-    L_RING_PRE,
+    L_RING_BEGIN,
     L_RING_IN,
     L_RING_OUT,
-    R_RING_PRE,
+    R_RING_BEGIN,
     R_RING_IN,
     R_RING_OUT
 };
@@ -29,12 +29,12 @@ const std::vector<ElementType> int_to_element = {
     LINE,
     L_CURVE,
     R_CURVE,
-    CROSS_PRE,
+    CROSS_BEGIN,
     CROSS_IN,
-    L_RING_PRE,
+    L_RING_BEGIN,
     L_RING_IN,
     L_RING_OUT,
-    R_RING_PRE,
+    R_RING_BEGIN,
     R_RING_IN,
     R_RING_OUT
 };

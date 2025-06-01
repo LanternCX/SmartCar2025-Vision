@@ -114,10 +114,11 @@ vision_result process_img(cv::Mat frame){
     calc_track_type();
 
     // 拟合中线
+    int track_width = 115;
     track.left.center.clear();
-    track.left.center = shift_line(track.left.line, 50);
+    track.left.center = shift_line(track.left.line, track_width);
     track.right.center.clear();
-    track.right.center = shift_line(track.right.line, -50);
+    track.right.center = shift_line(track.right.line, -track_width);
 
     // 三角滤波
     filter_points(track.left.center, temp, 35);

@@ -167,19 +167,19 @@ ElementType get_element_type(track_result &track) {
 
     debug(corner_cnt);
     
-    if (corner_cnt[0] == 2 && corner_cnt[1] == 2) {
-        track.type = CROSS_PRE;
-        return CROSS_PRE;
+    if (corner_cnt[0] == 1 && corner_cnt[1] == 1) {
+        track.type = CROSS_BEGIN;
+        return CROSS_BEGIN;
     }
 
     if (corner_cnt[0] == 2 && corner_cnt[1] < 2) {
-        track.type = L_RING_PRE;
-        return L_RING_PRE;
+        track.type = L_RING_BEGIN;
+        return L_RING_BEGIN;
     }
 
     if (corner_cnt[0] < 2 && corner_cnt[1] == 2) {
-        track.type = R_RING_PRE;
-        return R_RING_PRE;
+        track.type = R_RING_BEGIN;
+        return R_RING_BEGIN;
     }
     
     line_params left_res = fit_line(left.line);
