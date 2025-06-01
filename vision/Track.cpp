@@ -1,3 +1,4 @@
+#include <opencv2/core/hal/interface.h>
 #include <opencv2/core/types.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -95,6 +96,7 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
         int dir = 0;
         int turn = 0;
         int step = 0;
+        int tag = 0;
         while (step < max_points && half < x && x < img.cols - half && half < y && y < img.rows - half && turn < 4) {
             cv::Point pts0 = {std::max(x - half, 0), std::max(y - half, 0)};
             cv::Point pts1 = {std::min(x + half, img.cols), std::min(y + half, img.rows)};
@@ -116,6 +118,13 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
                 // 侧方是黑色就前进
                 x += dir_front[dir][0];
                 y += dir_front[dir][1];
+                if (y >= start.y && tag > 10) {
+                    break;
+                } else if (y >= start.y) {
+                    continue;
+                } else {
+                    tag++;
+                }
                 current_line.push_back({x, y});
                 step++;
                 turn = 0;
@@ -124,6 +133,13 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
                 x += mode ? dir_frontleft[dir][0] : dir_frontright[dir][0];
                 y += mode ? dir_frontleft[dir][1] : dir_frontright[dir][1];
                 dir = mode ? (dir + 3) % 4 : (dir + 1) % 4;
+                if (y >= start.y && tag > 10) {
+                    break;
+                } else if (y >= start.y) {
+                    continue;
+                } else {
+                    tag++;
+                }
                 current_line.push_back({x, y});
                 step++;
                 turn = 0;

@@ -28,7 +28,7 @@ void filter_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>&
     assert(kernel % 2 == 1);
     int half = kernel / 2;
     int num = pts_in.size();
-    pts_out.resize(num);
+    pts_out.clear();
     for (int i = half; i < num - half; i++) {
         double sum_x = 0;
         double sum_y = 0;
@@ -40,8 +40,9 @@ void filter_points(const std::vector<cv::Point>& pts_in, std::vector<cv::Point>&
             sum_y += static_cast<double>(pts_in[index].y) * weight;
             weight_sum += weight;
         }
-        pts_out[i].x = static_cast<int>(std::round(sum_x / weight_sum));
-        pts_out[i].y = static_cast<int>(std::round(sum_y / weight_sum));
+        int new_x = static_cast<int>(std::round(sum_x / weight_sum));
+        int new_y = static_cast<int>(std::round(sum_y / weight_sum));
+        pts_out.push_back(cv::Point(new_x, new_y));
     }
 }
 

@@ -60,26 +60,26 @@ vision_result process_img(cv::Mat frame){
         std::swap(height, width);
     }
 
+    std::vector<cv::Point> temp;
+
     // 扫线
     cv::Point start = {width / 2, height - 10};
     track_result track = find_lines(gray, start);
-
     track.left.frame_size = frame.size();
     track.right.frame_size = frame.size();
 
-    std::vector<cv::Point> temp;
+    // 过滤边缘点
+    remove_bound_pts(track.right.line, temp, frame.size());
+    track.right.line = temp;
+    remove_bound_pts(track.left.line, temp, frame.size());
+    track.left.line = temp;
+
     // 三角滤波
     filter_points(track.left.line, temp, 15);
     track.left.line = temp;
     filter_points(track.right.line, temp, 15);
     track.right.line = temp;
 
-    // 过滤边缘点
-    remove_bound_pts(track.right.line, temp, frame.size());
-    track.right.line = temp;
-    remove_bound_pts(track.left.line, temp, frame.size());
-    track.left.line = temp;
-
     // 等距采样
     resample_points(track.left.line, temp, track.left.sample_dist);
     track.left.line = temp;
@@ -92,33 +92,15 @@ vision_result process_img(cv::Mat frame){
     remove_bound_pts(track.left.line, temp, frame.size());
     track.left.line = temp;
 
-    // 元素识别
-    ElementType type = get_element_type(track);
-
-    change_type_count(type);
-    calc_track_type();
-
     // 透视变换
     track.left.line = get_perspective_line(track.left.line, frame.size());
     track.right.line = get_perspective_line(track.right.line, frame.size());
-
-    // 过滤边缘点
-    remove_bound_pts(track.right.line, temp, frame.size());
-    track.right.line = temp;
-    remove_bound_pts(track.left.line, temp, frame.size());
-    track.left.line = temp;
     
     // 等距采样
     resample_points(track.left.line, temp, track.left.sample_dist);
     track.left.line = temp;
     resample_points(track.right.line, temp, track.right.sample_dist);
     track.right.line = temp;
-
-    // 过滤边缘点
-    remove_bound_pts(track.right.line, temp, frame.size());
-    track.right.line = temp;
-    remove_bound_pts(track.left.line, temp, frame.size());
-    track.left.line = temp;
 
     // 三角滤波
     filter_points(track.left.line, temp, 35);
@@ -126,11 +108,10 @@ vision_result process_img(cv::Mat frame){
     filter_points(track.right.line, temp, 35);
     track.right.line = temp;
 
-    // 过滤边缘点
-    remove_bound_pts(track.right.line, temp, frame.size());
-    track.right.line = temp;
-    remove_bound_pts(track.left.line, temp, frame.size());
-    track.left.line = temp;
+    // 元素识别
+    ElementType type = get_element_type(track);
+    change_type_count(type);
+    calc_track_type();
 
     // 拟合中线
     track.left.center.clear();
@@ -138,47 +119,23 @@ vision_result process_img(cv::Mat frame){
     track.right.center.clear();
     track.right.center = shift_line(track.right.line, -50);
 
-    // 过滤边缘点
-    remove_bound_pts(track.right.center, temp, frame.size());
-    track.right.center = temp;
-    remove_bound_pts(track.left.center, temp, frame.size());
-    track.left.center = temp;
-
     // 三角滤波
     filter_points(track.left.center, temp, 35);
     track.left.center = temp;
     filter_points(track.right.center, temp, 35);
     track.right.center = temp;
-
-    // 过滤边缘点
-    remove_bound_pts(track.right.center, temp, frame.size());
-    track.right.center = temp;
-    remove_bound_pts(track.left.center, temp, frame.size());
-    track.left.center = temp;
 
     // 等距采样
     resample_points(track.left.center, temp, track.left.sample_dist);
     track.left.center = temp;
     resample_points(track.right.center, temp, track.right.sample_dist);
     track.right.center = temp;
-
-    // 过滤边缘点
-    remove_bound_pts(track.right.center, temp, frame.size());
-    track.right.center = temp;
-    remove_bound_pts(track.left.center, temp, frame.size());
-    track.left.center = temp;
     
     // 三角滤波
     filter_points(track.left.center, temp, 35);
     track.left.center = temp;
     filter_points(track.right.center, temp, 35);
     track.right.center = temp;
-
-    // 过滤边缘点
-    remove_bound_pts(track.right.center, temp, frame.size());
-    track.right.center = temp;
-    remove_bound_pts(track.left.center, temp, frame.size());
-    track.left.center = temp;
 
     debug(type);
     debug(get_track_type());
