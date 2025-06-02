@@ -7,6 +7,8 @@
 #include <vector>
 
 #include "Line.h"
+#include "Ring.h"
+#include "Type.h"
 #include "Vision.h"
 #include "Math.h"
 #include "Debug.h"
@@ -153,7 +155,7 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
 /**
  * @brief 判断赛道元素类型
  */
-ElementType get_element_type(track_result &track) {
+ElementType calc_element_type(track_result &track) {
     // l, r
     std::array<int, 2> corner_cnt;
     line_result left = track.left;
@@ -161,37 +163,80 @@ ElementType get_element_type(track_result &track) {
 
     // 镜像右边线使得逻辑统一
     right.line = mirror_line(right.line, right.frame_size);
-    // std::reverse(right.line.begin(), right.line.end()); 
     
     corner_cnt[0] = get_corner_count(trans_line(left.line, left.frame_size));
     corner_cnt[1] = get_corner_count(trans_line(right.line, right.frame_size));
 
-    debug(corner_cnt);
+    line_params left_fit_res = fit_line(left.line);
+    line_params right_fit_res = fit_line(right.line);
+
+    // 正在进入右圆环就判断是否已经进入右圆环
+    if (get_track_type() == R_RING_BEGIN) {
+        if (calc_is_ring_in(track)) {
+            return R_RING_IN;
+        } else {
+            return R_RING_BEGIN;
+        }
+    }
+
+    // 正在进入左圆环就判断是否已经进入左圆环
+    if (get_track_type() == L_RING_BEGIN) {
+        if (calc_is_ring_in(track)) {
+            return L_RING_IN;
+        } else {
+            return L_RING_OUT;
+        }
+    }
+
+    // 已经进入右圆环就判断是否已经出环
+    if (get_track_type() == R_RING_IN) {
+        if (corner_cnt[1] >= 1) {
+            return R_RING_OUT;
+        } else {
+            return R_RING_IN;
+        }        
+    }
     
+    // 已经进入左圆环就判断是否已经出环
+    if (get_track_type() == L_RING_IN) {
+        if (corner_cnt[0] >= 1) {
+            return L_RING_OUT;
+        } else {
+            return L_RING_IN;
+        }        
+    }
+
+    // 已经出右圆环就不重复入环，然后正常判断元素
+    if (get_track_type() != R_RING_OUT) {
+        // 入右圆环判断
+        if (corner_cnt[0] == 0 && corner_cnt[1] == 2) {
+            track.type = R_RING_BEGIN;
+            return R_RING_BEGIN;
+        }
+    }
+
+    // 已经出左边圆环就不重复入环，然后正常判断元素
+    if (get_track_type() != L_RING_OUT) {
+        // 入左圆环判断
+        if (corner_cnt[0] == 2 && corner_cnt[1] == 0) {
+            track.type = L_RING_BEGIN;
+            return L_RING_BEGIN;
+        }
+    }
+    
+     // 入十字判断
     if (corner_cnt[0] == 1 && corner_cnt[1] == 1) {
         track.type = CROSS_BEGIN;
         return CROSS_BEGIN;
     }
+   
 
-    if (corner_cnt[0] == 2 && corner_cnt[1] == 0) {
-        track.type = L_RING_BEGIN;
-        return L_RING_BEGIN;
-    }
-
-    if (corner_cnt[0] == 0 && corner_cnt[1] == 2) {
-        track.type = R_RING_BEGIN;
-        return R_RING_BEGIN;
-    }
-    
-    line_params left_res = fit_line(left.line);
-    line_params right_res = fit_line(right.line);
-
-    if (left_res.slope > 0.15) {
+    if (left_fit_res.slope > 0.15) {
         track.type = R_CURVE;
         return R_CURVE;
     }
 
-    if (right_res.slope < -0.15) {
+    if (right_fit_res.slope < -0.15) {
         track.type = L_CURVE;
         return L_CURVE;
     }

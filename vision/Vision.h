@@ -17,6 +17,7 @@
 
 #define VISION_DEBUG 1
 
+const int TRACK_WIDTH = 115 * 2;
 typedef struct{
     int center;
     ElementType type;
@@ -24,3 +25,4 @@ typedef struct{
 
 vision_result process_img(cv::Mat frame);
 void draw_line(std::vector<int> line, cv::Mat& image);
+void calc_target(track_result &track, ElementType type);

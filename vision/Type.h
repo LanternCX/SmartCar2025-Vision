@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "Line.h"
+#include "Track.h"
 void init_statue(int element_cnt);
 void change_type_count(ElementType now);
 ElementType get_track_type(void);

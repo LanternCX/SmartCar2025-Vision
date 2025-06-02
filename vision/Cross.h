@@ -1,4 +1,4 @@
 #pragma once
 
 #include "Vision.h"
-void corss_repair(track_result track);
+void calc_cross_target(track_result &track, ElementType type);

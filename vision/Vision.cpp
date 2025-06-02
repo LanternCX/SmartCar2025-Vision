@@ -13,6 +13,7 @@
 #include "Track.h"
 #include "Vision.h"
 #include "Cross.h"
+#include "Ring.h"
 #include "Debug.h"
 #include "Type.h"
 
@@ -109,16 +110,14 @@ vision_result process_img(cv::Mat frame) {
     track.right.line = temp;
 
     // 元素识别
-    ElementType type = get_element_type(track);
+    ElementType type = calc_element_type(track);
     change_type_count(type);
     calc_track_type();
 
-    // 拟合中线
-    int track_width = 115;
     track.left.center.clear();
-    track.left.center = shift_line(track.left.line, track_width);
+    track.left.center = shift_line(track.left.line, TRACK_WIDTH / 2);
     track.right.center.clear();
-    track.right.center = shift_line(track.right.line, -track_width);
+    track.right.center = shift_line(track.right.line, -(TRACK_WIDTH / 2));
 
     // 三角滤波
     filter_points(track.left.center, temp, 35);
@@ -137,6 +136,8 @@ vision_result process_img(cv::Mat frame) {
     track.left.center = temp;
     filter_points(track.right.center, temp, 35);
     track.right.center = temp;
+
+    calc_target(track, get_track_type());
 
     if (VISION_DEBUG) {
         cv::Mat left = cv::Mat::zeros(frame.size(), CV_8UC1);
@@ -166,6 +167,32 @@ vision_result process_img(cv::Mat frame) {
         cv::imshow("right-center", right_center);
         cv::imshow("left-center", left_center);
     }
-    return {1, LINE};
+
+    return {track.target.x, get_track_type()};
 }
 
+/**
+ * @brief 维护状态机
+ * @param track 赛道数据，传址
+ * @param type 赛道元素类型
+ */ 
+void calc_target(track_result &track, ElementType type) {
+    cv::Size size = track.left.frame_size;
+    if (type == CROSS_BEGIN || type == CROSS_IN) {
+        calc_cross_target(track, type);
+    } else if (type == L_RING_BEGIN || type == L_RING_IN || type == L_RING_OUT
+     || type == R_RING_BEGIN || type == R_RING_IN || type == R_RING_OUT
+    ) {
+        calc_ring_target(track, type);
+    } else {
+        track.center = track.left.center;
+        track.target.y = size.height - 15;
+    }
+
+    for (cv::Point pts : track.center) {
+        track.target.x = pts.x;
+        if (pts.y <= track.target.y) {
+            return;
+        }
+    }
+}
