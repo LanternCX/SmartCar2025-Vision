@@ -1,6 +1,7 @@
 #include <opencv2/core/types.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
+#include <utility>
 #include <vector>
 
 #include "Line.h"
@@ -218,15 +219,16 @@ std::vector<int> trans_line(const std::vector<cv::Point> &line, const cv::Size &
 }
 
 /**
- * @brief 角点数量判断
+ * @brief 凹槽数量判断
  * @param line 边线
  * @param threshold 角点阈值
  */
-int get_corner_count(const std::vector<int> &line, const int &threshold) {
+int get_solt_count(const std::vector<int> &line) {
+    int threshold = 30.0;
     int n = line.size();
     int dist = 15;
     int cnt = 0;
-    for (int i = 0; i < n - dist; i++) {
+    for (int i = 0; i < n / 2 - dist; i++) {
         int next = i + dist;
         if (cnt % 2 == 0) {
             cnt += line[i] - line[next] > threshold;
@@ -236,6 +238,36 @@ int get_corner_count(const std::vector<int> &line, const int &threshold) {
         }
     }
     return cnt / 2;
+}
+
+/**
+ * @brief 角点数量判断
+ * @param line 边线
+ * @return pair(向外角点, 向内角点) 
+ */
+std::pair<int, int> get_corner_count(const std::vector<int> &line) {
+    int threshold = 30;
+    int n = line.size();
+    int dist = 15;
+    std::pair<int, int> res;
+    int &a = res.first, &b = res.second;
+    // 0 -> a, 1 -> b
+    int pre = -1;
+
+    for (int i = 0; i < n - dist; i++) {
+        int next = i + dist;
+        // a 和 b 需要成对出现因此 a 与 b 的差值必须小于等于 1
+        int diff = line[i] - line[next];
+        if (diff < -threshold && pre != 1) {
+            a++;
+            pre = 1;
+        }
+        if (diff > threshold && pre != 0) {
+            b++;
+            pre = 0;
+        }
+    }
+    return res;
 }
 
 /**

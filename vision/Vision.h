@@ -14,6 +14,7 @@
 #include "Perspective.h"
 #include "Ring.h"
 #include "Track.h"
+#include <opencv2/core/types.hpp>
 
 #define VISION_DEBUG 1
 
@@ -26,3 +27,4 @@ typedef struct{
 vision_result process_img(cv::Mat frame);
 void draw_line(std::vector<int> line, cv::Mat& image);
 void calc_target(track_result &track, ElementType type);
+cv::Point get_pre_target();

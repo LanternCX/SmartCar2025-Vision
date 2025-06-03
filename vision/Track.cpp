@@ -1,5 +1,7 @@
+#include <array>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/core/types.hpp>
+#include <opencv2/core/utils/logger.defines.hpp>
 #include <opencv2/opencv.hpp>
 
 #include <algorithm>
@@ -69,9 +71,6 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
 
     track_result result;
     result.left.line.clear();
-    result.right.line.clear();
-
-    // 计算局部区域半径
     int half = block_size / 2;
 
     // 左右边线巡线
@@ -157,80 +156,186 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
  */
 ElementType calc_element_type(track_result &track) {
     // l, r
-    std::array<int, 2> corner_cnt;
     line_result left = track.left;
     line_result right = track.right;
-
+    
     // 镜像右边线使得逻辑统一
     right.line = mirror_line(right.line, right.frame_size);
     
-    corner_cnt[0] = get_corner_count(trans_line(left.line, left.frame_size));
-    corner_cnt[1] = get_corner_count(trans_line(right.line, right.frame_size));
+    std::array<int, 2> solt_cnt;
+    std::vector<int> left_x = trans_line(left.line, left.frame_size);
+    std::vector<int> right_x = trans_line(right.line, right.frame_size);
+
+    solt_cnt[0] = get_solt_count(left_x);
+    solt_cnt[1] = get_solt_count(right_x);
+
+    // array<左, 右>, pair<向外, 向内>
+    std::array<std::pair<int, int>, 2> corner_cnt;
+    corner_cnt[0] = get_corner_count(left_x);
+    corner_cnt[1] = get_corner_count(right_x);
 
     line_params left_fit_res = fit_line(left.line);
     line_params right_fit_res = fit_line(right.line);
 
-    // 正在进入右圆环就判断是否已经进入右圆环
+    debug(solt_cnt);
+    debug(corner_cnt);
+
+    // 右圆环状态机器转移
+    // 准备进入圆环转移到开始进入圆环
+    if (get_track_type() == R_RING_READY) {
+        // 右边向外的拐点丢失
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {1, 0}}};
+        if (corner_cnt != res) {
+            debug("ready to begin");
+            return R_RING_BEGIN;
+        } else {
+            return R_RING_READY;
+        }
+    }
+    // 开始进入转移到正在进入
     if (get_track_type() == R_RING_BEGIN) {
-        if (calc_is_ring_in(track)) {
+        // 只有右边线有一个向外的拐点
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {0, 1}}};
+        if (corner_cnt == res) {    
+            debug("begin to in");
             return R_RING_IN;
         } else {
             return R_RING_BEGIN;
-        }
+        }        
     }
-
-    // 正在进入左圆环就判断是否已经进入左圆环
-    if (get_track_type() == L_RING_BEGIN) {
-        if (calc_is_ring_in(track)) {
-            return L_RING_IN;
-        } else {
-            return L_RING_OUT;
-        }
-    }
-
-    // 已经进入右圆环就判断是否已经出环
+    // 正在进入转移到已经进入
     if (get_track_type() == R_RING_IN) {
-        if (corner_cnt[1] >= 1) {
+        // 两边都没有拐点
+        std::array<std::pair<int, int>, 2> res = {{{0, 1}, {0, 0}}};
+        if (corner_cnt == res) {
+            debug("in to running");
+            return R_RING_RUNNING;
+        } else {
+            return R_RING_IN;
+        }        
+    }
+    // 已经进入转移到准备出环
+    if (get_track_type() == R_RING_RUNNING) {
+        // 左边有一个向外的拐点`
+        if (corner_cnt[0].first == 1 && corner_cnt[1].second == 1) {
+            debug("running to out");
             return R_RING_OUT;
         } else {
-            return R_RING_IN;
+            return R_RING_RUNNING;
         }        
     }
-    
-    // 已经进入左圆环就判断是否已经出环
+    // 准备出环转移到出环结束
+    if (get_track_type() == R_RING_OUT) {
+        // 右边有一个向外的拐点
+        if (corner_cnt[0].first != 1 || corner_cnt[1].second != 1) {
+            debug("out to end");
+            return R_RING_END;
+        } else {
+            return R_RING_OUT;
+        }        
+    }
+    // 出环结束转移到直道模式
+    if (get_track_type() == R_RING_END) {
+        // 两边都没有拐点
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {0, 0}}};
+        if (corner_cnt == res) {
+            return LINE;
+        } else {
+            return R_RING_END;
+        }
+    }
+    // 已经出环就不重复入环，然后正常判断元素
+    // 入环判断
+    {
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {1, 0}}};
+        if (corner_cnt == res) {
+            track.type = R_RING_READY;
+            return R_RING_READY;
+        }
+    }
+
+    // 左圆环状态机器转移
+    // 准备进入圆环转移到开始进入圆环
+    if (get_track_type() == L_RING_READY) {
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {0, 0}}};
+        if (corner_cnt == res) {
+            return L_RING_BEGIN;
+        } else {
+            return L_RING_READY;
+        }
+    }
+    // 开始进入转移到正在进入
+    if (get_track_type() == L_RING_BEGIN) {
+        // 只有左边线有一个向外的拐点
+        std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};
+        if (corner_cnt == res) {
+            return L_RING_IN;
+        } else {
+            return L_RING_BEGIN;
+        }        
+    }
+    // 正在进入转移到已经进入
     if (get_track_type() == L_RING_IN) {
-        if (corner_cnt[0] >= 1) {
-            return L_RING_OUT;
+        // 两边都没有拐点
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {0, 0}}};
+        if (corner_cnt == res) {
+            return L_RING_RUNNING;
         } else {
             return L_RING_IN;
         }        
     }
-
-    // 已经出右圆环就不重复入环，然后正常判断元素
-    if (get_track_type() != R_RING_OUT) {
-        // 入右圆环判断
-        if (corner_cnt[0] == 0 && corner_cnt[1] == 2) {
-            track.type = R_RING_BEGIN;
-            return R_RING_BEGIN;
+    // 已经进入转移到准备出环
+    if (get_track_type() == L_RING_RUNNING) {
+        // 右边有一个向外的拐点
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {1, 0}}};
+        if (corner_cnt == res) {
+            return L_RING_OUT;
+        } else {
+            return L_RING_RUNNING;
+        }        
+    }
+    // 准备出环转移到出环结束
+    if (get_track_type() == L_RING_OUT) {
+        // 左边有一个向外的拐点
+        std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};
+        if (corner_cnt == res) {
+            return L_RING_RUNNING;
+        } else {
+            return L_RING_END;
+        }        
+    }
+    // 出环结束转移到直道模式
+    if (get_track_type() == L_RING_END) {
+        // 两边都没有拐点
+        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {0, 0}}};
+        if (corner_cnt == res) {
+            return LINE;
+        } else {
+            return L_RING_END;
         }
     }
-
-    // 已经出左边圆环就不重复入环，然后正常判断元素
-    if (get_track_type() != L_RING_OUT) {
-        // 入左圆环判断
-        if (corner_cnt[0] == 2 && corner_cnt[1] == 0) {
-            track.type = L_RING_BEGIN;
-            return L_RING_BEGIN;
+    // 入环判断
+    {
+        std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};
+        if (corner_cnt == res) {
+            track.type = L_RING_READY;
+            return L_RING_READY;
         }
     }
     
-     // 入十字判断
-    if (corner_cnt[0] == 1 && corner_cnt[1] == 1) {
+    // 入十字判断
+    if (solt_cnt == std::array<int, 2>{0, 0}) {
         track.type = CROSS_BEGIN;
         return CROSS_BEGIN;
     }
-   
 
+    if (solt_cnt == std::array<int, 2>{0, 0} 
+        && corner_cnt == std::array<std::pair<int, int>, 2>{{{0, 1}, {0, 1}}}
+        && get_track_type() == CROSS_BEGIN
+    ) {
+        return CROSS_IN;
+    }
+   
     if (left_fit_res.slope > 0.15) {
         track.type = R_CURVE;
         return R_CURVE;

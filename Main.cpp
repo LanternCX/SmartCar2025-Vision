@@ -17,7 +17,7 @@
  */
 
 int run() {
-    cv::VideoCapture cap(0);
+    cv::VideoCapture cap(2);
     // cv::VideoCapture cap("../vedio/test.mp4");
     if (!cap.isOpened()) {
         std::cerr << "无法打开视频文件！" << std::endl;
@@ -31,7 +31,7 @@ int run() {
     int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 33;
 
     init_perspective();
-    init_statue(11);
+    init_state();
 
     while (true) {
         cap >> frame;

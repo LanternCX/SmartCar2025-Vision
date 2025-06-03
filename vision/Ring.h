@@ -8,4 +8,4 @@
 #include "Track.h"
 
 void calc_ring_target(track_result &track, ElementType type);
-bool calc_is_ring_in(track_result &track);
+bool calc_is_ring_in(const track_result track);

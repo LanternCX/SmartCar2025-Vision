@@ -1,6 +1,9 @@
 #include "Ring.h"
 #include "Line.h"
 #include "Track.h"
+#include "Debug.h"
+#include "Vision.h"
+#include <iterator>
 #include <opencv2/core/types.hpp>
 #include <vector>
 
@@ -13,30 +16,30 @@
 
 void calc_right_ring_target(track_result &track, ElementType type);
 void calc_left_ring_target(track_result &track, ElementType type);
+
 /**
  * @brief 确定最终拟合的中线以及预锚点的 Y 值
  */
 void calc_ring_target(track_result &track, ElementType type) {
-    if (type == L_RING_BEGIN || type == L_RING_IN || type == L_RING_OUT) {
+    if (right_ring_type.count(type)) {
         calc_right_ring_target(track, type);
     }
-    if (type == R_RING_BEGIN || type == R_RING_IN || type == R_RING_OUT) {
+    if (left_ring_type.count(type)) {
         calc_left_ring_target(track, type);
     }
 
     cv::Size size = track.left.frame_size;
-    track.target.y = size.height - 15;
+    int height = min(size.height, size.width);
+    track.target.y = height - 30;
 }
 
 /**
  * @brief 右圆环处理
  */
 void calc_right_ring_target(track_result &track, ElementType type) {
-    if (type == R_RING_BEGIN) {
-        track.center = track.left.center;
-    } else if (type == R_RING_IN) {
+    if (type == R_RING_IN) {
         track.center = track.right.center;
-    } else if (type == R_RING_OUT) {
+    } else {
         track.center = track.left.center;
     }
 }
@@ -45,12 +48,10 @@ void calc_right_ring_target(track_result &track, ElementType type) {
  * @brief 左圆环处理
  */
 void calc_left_ring_target(track_result &track, ElementType type) {
-    if (type == L_RING_BEGIN) {
+    if (type == R_RING_IN) {
         track.center = track.right.center;
-    } else if (type == L_RING_IN) {
+    } else {
         track.center = track.left.center;
-    } else if (type == L_RING_OUT) {
-        track.center = track.right.center;
     }
 }
 
@@ -58,39 +59,41 @@ void calc_left_ring_target(track_result &track, ElementType type) {
  * @brief 计算是否已经进入圆环
  * @return 是否进入圆环
  */
-bool calc_is_ring_in(track_result &track) {
+bool calc_is_ring_in(const track_result track) {
     cv::Size size = track.left.frame_size;
+    cv::Point target = get_pre_target();
     int height = size.height;
     int width = size.width;
 
-    std::vector<int> left(-1, height), right(-1, height);
+    std::vector<int> left(height + 1, -1), right(height + 1, -1);
     for (cv::Point pt : track.left.line) {
-        if (left[pt.y] == -1) {
+        if (left[pt.y] != -1) {
             continue;
         }
         left[pt.y] = pt.x;
     }
     for (cv::Point pt : track.right.line) {
-        if (left[pt.y] == -1) {
+        if (right[pt.y] != -1) {
             continue;
         }
         right[pt.y] = pt.x;
     }
-
     int min_idx = -1;
     int min_dist = -1;
     for (int i = 0; i < height; i++) {
         if (left[i] == -1 || right[i] == -1) {
             continue;
         }
-        int dist = abs(left[i] - right[i]);
+        int dist = std::abs(left[i] - right[i]);
         if (min_idx == -1) {
             min_idx = i;
             min_dist = dist;
         } else if (dist < min_dist){
             min_idx = i;
+            min_dist = dist;
         }
     }
-    
-    return min_idx == -1 ? false : min_idx < track.target.y;
+    bool res = min_idx == -1 ? false : min_idx > 280; 
+    debug(min_idx, target.y);
+    return false;
 }

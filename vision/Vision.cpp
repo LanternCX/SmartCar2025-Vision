@@ -96,6 +96,12 @@ vision_result process_img(cv::Mat frame) {
     // 透视变换
     track.left.line = get_perspective_line(track.left.line, frame.size());
     track.right.line = get_perspective_line(track.right.line, frame.size());
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.line, temp, frame.size());
+    track.right.line = temp;
+    remove_bound_pts(track.left.line, temp, frame.size());
+    track.left.line = temp;
     
     // 等距采样
     resample_points(track.left.line, temp, track.left.sample_dist);
@@ -111,13 +117,21 @@ vision_result process_img(cv::Mat frame) {
 
     // 元素识别
     ElementType type = calc_element_type(track);
+    track.type = type;
     change_type_count(type);
     calc_track_type();
 
+    // 拟合中线
     track.left.center.clear();
     track.left.center = shift_line(track.left.line, TRACK_WIDTH / 2);
     track.right.center.clear();
     track.right.center = shift_line(track.right.line, -(TRACK_WIDTH / 2));
+
+    // 过滤边缘点
+    remove_bound_pts(track.right.center, temp, frame.size());
+    track.right.center = temp;
+    remove_bound_pts(track.left.center, temp, frame.size());
+    track.left.center = temp;
 
     // 三角滤波
     filter_points(track.left.center, temp, 35);
@@ -138,6 +152,8 @@ vision_result process_img(cv::Mat frame) {
     track.right.center = temp;
 
     calc_target(track, get_track_type());
+
+    debug(get_track_type());
 
     if (VISION_DEBUG) {
         cv::Mat left = cv::Mat::zeros(frame.size(), CV_8UC1);
@@ -164,12 +180,14 @@ vision_result process_img(cv::Mat frame) {
 
         cv::imshow("left", left);
         cv::imshow("right", right);
-        cv::imshow("right-center", right_center);
-        cv::imshow("left-center", left_center);
+        // cv::imshow("right-center", right_center);
+        // cv::imshow("left-center", left_center);
     }
 
     return {track.target.x, get_track_type()};
 }
+
+static cv::Point pre_target;
 
 /**
  * @brief 维护状态机
@@ -178,21 +196,29 @@ vision_result process_img(cv::Mat frame) {
  */ 
 void calc_target(track_result &track, ElementType type) {
     cv::Size size = track.left.frame_size;
-    if (type == CROSS_BEGIN || type == CROSS_IN) {
+    if (cross_type.count(type)) {
         calc_cross_target(track, type);
-    } else if (type == L_RING_BEGIN || type == L_RING_IN || type == L_RING_OUT
-     || type == R_RING_BEGIN || type == R_RING_IN || type == R_RING_OUT
-    ) {
+    } else if (ring_type.count(type)) {
         calc_ring_target(track, type);
     } else {
         track.center = track.left.center;
         track.target.y = size.height - 15;
     }
-
+    
+    // 找到 y 值距离预锚点 y 值最近的点作为预锚点
+    int min_dist = std::max(size.height, size.width);
     for (cv::Point pts : track.center) {
-        track.target.x = pts.x;
-        if (pts.y <= track.target.y) {
-            return;
+        int dist = std::abs(pts.y - track.target.y);
+        if (dist < min_dist) {
+            track.target.x = pts.x;
+            pre_target = track.target;
         }
     }
+}
+
+/**
+ * @brief 获取上一次的预锚点
+ */
+cv::Point get_pre_target() {
+    return pre_target;
 }

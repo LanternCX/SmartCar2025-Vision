@@ -6,7 +6,7 @@
 #pragma once
 
 #include "Track.h"
-void init_statue(int element_cnt);
+void init_state();
 void change_type_count(ElementType now);
 ElementType get_track_type(void);
 void calc_track_type(void);

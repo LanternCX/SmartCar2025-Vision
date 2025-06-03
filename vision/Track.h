@@ -13,17 +13,23 @@
 #include "Line.h"
 
 enum ElementType {
-    LINE,
-    L_CURVE,
-    R_CURVE,
-    CROSS_BEGIN,
-    CROSS_IN,
-    L_RING_BEGIN,
-    L_RING_IN,
-    L_RING_OUT,
-    R_RING_BEGIN,
-    R_RING_IN,
-    R_RING_OUT
+    LINE, // 0
+    L_CURVE, // 1
+    R_CURVE, // 2
+    CROSS_BEGIN, // 3
+    CROSS_IN, // 4
+    L_RING_READY, // 5
+    L_RING_BEGIN, // 6
+    L_RING_IN, // 7
+    L_RING_RUNNING, // 8
+    L_RING_OUT, // 9
+    L_RING_END, // 10
+    R_RING_READY, // 11
+    R_RING_BEGIN, // 12
+    R_RING_IN, // 13
+    R_RING_RUNNING, // 14
+    R_RING_OUT, // 15
+    R_RING_END, // 16
 };
 
 const std::vector<ElementType> int_to_element = {
@@ -32,12 +38,56 @@ const std::vector<ElementType> int_to_element = {
     R_CURVE,
     CROSS_BEGIN,
     CROSS_IN,
+    L_RING_READY,
     L_RING_BEGIN,
     L_RING_IN,
+    L_RING_RUNNING,
     L_RING_OUT,
+    L_RING_END,
+    R_RING_READY,
     R_RING_BEGIN,
     R_RING_IN,
-    R_RING_OUT
+    R_RING_RUNNING,
+    R_RING_OUT,
+    R_RING_END,
+};
+
+
+const std::set<ElementType> left_ring_type = {
+    L_RING_READY,
+    L_RING_BEGIN,
+    L_RING_IN,
+    L_RING_RUNNING,
+    L_RING_OUT,
+    L_RING_END,
+};
+const std::set<ElementType> right_ring_type = {
+    R_RING_READY,
+    R_RING_BEGIN,
+    R_RING_IN,
+    R_RING_RUNNING,
+    R_RING_OUT,
+    R_RING_END,
+};
+
+const std::set<ElementType> ring_type = {
+    L_RING_READY,
+    L_RING_BEGIN,
+    L_RING_IN,
+    L_RING_RUNNING,
+    L_RING_OUT,
+    L_RING_END,
+    R_RING_READY,
+    R_RING_BEGIN,
+    R_RING_IN,
+    R_RING_RUNNING,
+    R_RING_OUT,
+    R_RING_END,
+};
+
+const std::set<ElementType> cross_type = {
+    CROSS_BEGIN,
+    CROSS_IN
 };
 
 /**

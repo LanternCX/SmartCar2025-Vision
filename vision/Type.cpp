@@ -27,7 +27,7 @@ typedef struct track_type {
     int element_count;
 
     // 需要维护的赛道类型数量
-    const int length = 10;
+    const int length = 5;
 } track_type;
 
 static track_type state;
@@ -36,7 +36,8 @@ static track_type state;
  * @brief 初始化单例
  * @param element_cnt 元素种类数量
  */
-void init_statue(int element_cnt) {
+void init_state() {
+    int element_cnt = int_to_element.size();
     state.type = LINE;
     state.pre_frame_type = std::queue<ElementType>();
     state.type_cnt = std::vector<int>(element_cnt);
@@ -50,9 +51,11 @@ void init_statue(int element_cnt) {
  * @param now 当前帧计算出的赛道状态
  */
 void change_type_count(ElementType now) {
-    ElementType pre = state.pre_frame_type.front();
-    state.pre_frame_type.pop();
-    state.type_cnt[pre]--;
+    if (state.pre_frame_type.size() > state.length) {
+        ElementType pre = state.pre_frame_type.front();
+        state.pre_frame_type.pop();
+        state.type_cnt[pre]--;
+    }
 
     state.pre_frame_type.push(now);
     state.type_cnt[now]++;
