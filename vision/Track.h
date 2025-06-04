@@ -12,6 +12,8 @@
 #include <vector>
 #include "Line.h"
 
+const bool IS_RIGHT_RING = 1;
+
 enum ElementType {
     LINE, // 0
     L_CURVE, // 1
@@ -112,3 +114,5 @@ typedef struct {
 
 track_result find_lines(cv::Mat img, cv::Point start, int block_size = 7, int max_points = 1000);
 ElementType calc_element_type(track_result &track);
+ElementType calc_right_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt);
+ElementType calc_left_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt);

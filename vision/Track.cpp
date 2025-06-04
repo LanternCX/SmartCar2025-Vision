@@ -154,7 +154,7 @@ track_result find_lines(cv::Mat img, cv::Point start, int block_size, int max_po
 /**
  * @brief 判断赛道元素类型
  */
-ElementType calc_element_type(track_result &track) {
+ElementType calc_element_type(const track_result &track) {
     // l, r
     line_result left = track.left;
     line_result right = track.right;
@@ -180,13 +180,56 @@ ElementType calc_element_type(track_result &track) {
     debug(solt_cnt);
     debug(corner_cnt);
 
-    // 右圆环状态机器转移
+    // 右圆环状态机转移
+    if (right_ring_type.count(get_track_type())) {
+        return calc_right_ring(track, corner_cnt);
+    }
+    // 已经出环就不重复入环，然后正常判断元素
+    // 入环判断
+    if (corner_cnt == std::array<std::pair<int, int>, 2>{{{0, 0}, {1, 0}}}) {
+        return R_RING_READY;
+    }
+
+    // 左圆环状态机转移
+    if (left_ring_type.count(get_track_type())) {
+        return calc_left_ring(track, corner_cnt);
+    }
+    // 入环判断
+    if (corner_cnt ==  std::array<std::pair<int, int>, 2>{{{1, 0}, {0, 0}}}) {
+        return L_RING_READY;
+    }
+    
+    // 入十字判断
+    if (solt_cnt == std::array<int, 2>{0, 0}) {
+        return CROSS_BEGIN;
+    }
+
+    if (solt_cnt == std::array<int, 2>{0, 0} 
+        && corner_cnt == std::array<std::pair<int, int>, 2>{{{0, 1}, {0, 1}}}
+        && get_track_type() == CROSS_BEGIN
+    ) {
+        return CROSS_IN;
+    }
+   
+    if (left_fit_res.slope > 0.15) {
+        return R_CURVE;
+    }
+
+    if (right_fit_res.slope < -0.15) {
+        return L_CURVE;
+    }
+    return LINE;
+}
+
+/**
+ * @brief 右圆环状态机转移
+ */
+ElementType calc_right_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt) {
     // 准备进入圆环转移到开始进入圆环
     if (get_track_type() == R_RING_READY) {
         // 右边向外的拐点丢失
         std::array<std::pair<int, int>, 2> res = {{{0, 0}, {1, 0}}};
         if (corner_cnt != res) {
-            debug("ready to begin");
             return R_RING_BEGIN;
         } else {
             return R_RING_READY;
@@ -197,7 +240,6 @@ ElementType calc_element_type(track_result &track) {
         // 只有右边线有一个向外的拐点
         std::array<std::pair<int, int>, 2> res = {{{0, 0}, {0, 1}}};
         if (corner_cnt == res) {    
-            debug("begin to in");
             return R_RING_IN;
         } else {
             return R_RING_BEGIN;
@@ -208,7 +250,6 @@ ElementType calc_element_type(track_result &track) {
         // 两边都没有拐点
         std::array<std::pair<int, int>, 2> res = {{{0, 1}, {0, 0}}};
         if (corner_cnt == res) {
-            debug("in to running");
             return R_RING_RUNNING;
         } else {
             return R_RING_IN;
@@ -218,7 +259,6 @@ ElementType calc_element_type(track_result &track) {
     if (get_track_type() == R_RING_RUNNING) {
         // 左边有一个向外的拐点`
         if (corner_cnt[0].first == 1 && corner_cnt[1].second == 1) {
-            debug("running to out");
             return R_RING_OUT;
         } else {
             return R_RING_RUNNING;
@@ -228,7 +268,6 @@ ElementType calc_element_type(track_result &track) {
     if (get_track_type() == R_RING_OUT) {
         // 右边有一个向外的拐点
         if (corner_cnt[0].first != 1 || corner_cnt[1].second != 1) {
-            debug("out to end");
             return R_RING_END;
         } else {
             return R_RING_OUT;
@@ -244,21 +283,17 @@ ElementType calc_element_type(track_result &track) {
             return R_RING_END;
         }
     }
-    // 已经出环就不重复入环，然后正常判断元素
-    // 入环判断
-    {
-        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {1, 0}}};
-        if (corner_cnt == res) {
-            track.type = R_RING_READY;
-            return R_RING_READY;
-        }
-    }
+    return LINE;
+}
 
-    // 左圆环状态机器转移
+/**
+ * @brief 左圆环状态机转移
+ */
+ElementType calc_left_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt) {
     // 准备进入圆环转移到开始进入圆环
     if (get_track_type() == L_RING_READY) {
-        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {0, 0}}};
-        if (corner_cnt == res) {
+        std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};
+        if (corner_cnt != res) {
             return L_RING_BEGIN;
         } else {
             return L_RING_READY;
@@ -267,7 +302,7 @@ ElementType calc_element_type(track_result &track) {
     // 开始进入转移到正在进入
     if (get_track_type() == L_RING_BEGIN) {
         // 只有左边线有一个向外的拐点
-        std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};
+        std::array<std::pair<int, int>, 2> res = {{{0, 1}, {0, 0}}};
         if (corner_cnt == res) {
             return L_RING_IN;
         } else {
@@ -287,8 +322,7 @@ ElementType calc_element_type(track_result &track) {
     // 已经进入转移到准备出环
     if (get_track_type() == L_RING_RUNNING) {
         // 右边有一个向外的拐点
-        std::array<std::pair<int, int>, 2> res = {{{0, 0}, {1, 0}}};
-        if (corner_cnt == res) {
+        if (corner_cnt[0].second == 1 && corner_cnt[1].first == 1) {
             return L_RING_OUT;
         } else {
             return L_RING_RUNNING;
@@ -297,11 +331,10 @@ ElementType calc_element_type(track_result &track) {
     // 准备出环转移到出环结束
     if (get_track_type() == L_RING_OUT) {
         // 左边有一个向外的拐点
-        std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};
-        if (corner_cnt == res) {
-            return L_RING_RUNNING;
-        } else {
+        if (corner_cnt[0].second != 1 && corner_cnt[1].first != 1) {
             return L_RING_END;
+        } else {
+            return L_RING_OUT;
         }        
     }
     // 出环结束转移到直道模式
@@ -314,38 +347,5 @@ ElementType calc_element_type(track_result &track) {
             return L_RING_END;
         }
     }
-    // 入环判断
-    {
-        std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};
-        if (corner_cnt == res) {
-            track.type = L_RING_READY;
-            return L_RING_READY;
-        }
-    }
-    
-    // 入十字判断
-    if (solt_cnt == std::array<int, 2>{0, 0}) {
-        track.type = CROSS_BEGIN;
-        return CROSS_BEGIN;
-    }
-
-    if (solt_cnt == std::array<int, 2>{0, 0} 
-        && corner_cnt == std::array<std::pair<int, int>, 2>{{{0, 1}, {0, 1}}}
-        && get_track_type() == CROSS_BEGIN
-    ) {
-        return CROSS_IN;
-    }
-   
-    if (left_fit_res.slope > 0.15) {
-        track.type = R_CURVE;
-        return R_CURVE;
-    }
-
-    if (right_fit_res.slope < -0.15) {
-        track.type = L_CURVE;
-        return L_CURVE;
-    }
-
-    track.type = LINE;
     return LINE;
 }
