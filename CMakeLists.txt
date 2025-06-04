@@ -9,11 +9,15 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Include utils directory
 include_directories(${CMAKE_SOURCE_DIR}/vision)
-include_directories(${CMAKE_SOURCE_DIR}/math)
+include_directories(${CMAKE_SOURCE_DIR}/utils/math)
+include_directories(${CMAKE_SOURCE_DIR}/utils/time)
+include_directories(${CMAKE_SOURCE_DIR}/utils/debug)
 
 
 aux_source_directory(vision/ DIR_SRCS)
-aux_source_directory(math/ DIR_SRCS)
+aux_source_directory(utils/time/ DIR_SRCS)
+aux_source_directory(utils/math/ DIR_SRCS)
+aux_source_directory(utils/debug/ DIR_SRCS)
 
-add_executable(OpenCVTest main.cpp ${DIR_SRCS})
+add_executable(OpenCVTest Main.cpp ${DIR_SRCS})
 target_link_libraries(OpenCVTest ${OpenCV_LIBS})
