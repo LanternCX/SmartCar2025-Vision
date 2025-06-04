@@ -38,7 +38,7 @@ void calc_cross_target(track_result &track, ElementType type) {
         }
 
         int diff = right_x[next] - right_x[i];
-        if (diff > threshold) {
+        if (std::abs(diff) > threshold) {
             target_y = std::max(target_y, next);
         }
     }
@@ -50,7 +50,7 @@ void calc_cross_target(track_result &track, ElementType type) {
         }
 
         int diff = left_x[next] - left_x[i];
-        if (diff > threshold) {
+        if (std::abs(diff) > threshold) {
             target_y = std::max(target_y, next);
         }
     }

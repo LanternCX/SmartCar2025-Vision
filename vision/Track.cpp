@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "Line.h"
@@ -180,6 +181,15 @@ ElementType calc_element_type(const track_result &track) {
     debug(solt_cnt);
     debug(corner_cnt);
 
+    // 十字状态机转移
+    if (cross_type.count(get_track_type())) {
+        return calc_cross(track, corner_cnt);
+    }
+    // 入十字判断
+    if (corner_cnt[0].first == 1 && corner_cnt[1].first == 1) {
+        return CROSS_BEGIN;
+    }
+
     // 右圆环状态机转移
     if (right_ring_type.count(get_track_type())) {
         return calc_right_ring(track, corner_cnt);
@@ -198,18 +208,6 @@ ElementType calc_element_type(const track_result &track) {
     if (corner_cnt ==  std::array<std::pair<int, int>, 2>{{{1, 0}, {0, 0}}}) {
         return L_RING_READY;
     }
-    
-    // 入十字判断
-    if (solt_cnt == std::array<int, 2>{0, 0}) {
-        return CROSS_BEGIN;
-    }
-
-    if (solt_cnt == std::array<int, 2>{0, 0} 
-        && corner_cnt == std::array<std::pair<int, int>, 2>{{{0, 1}, {0, 1}}}
-        && get_track_type() == CROSS_BEGIN
-    ) {
-        return CROSS_IN;
-    }
    
     if (left_fit_res.slope > 0.15) {
         return R_CURVE;
@@ -221,10 +219,29 @@ ElementType calc_element_type(const track_result &track) {
     return LINE;
 }
 
+ElementType calc_cross(const track_result &track, const std::array<std::pair<int, int>, 2> corner_cnt) {
+    if (get_track_type() == CROSS_BEGIN) {
+        if (corner_cnt[0].second == 1 && corner_cnt[1].second == 1) {
+            return CROSS_IN;
+        } else {
+            return CROSS_BEGIN;
+        }
+    }
+
+    if (get_track_type() == CROSS_IN) {
+        if (corner_cnt[0].second != 1 || corner_cnt[1].second != 1) {
+            return LINE;
+        } else {
+            return CROSS_IN;
+        }
+    }
+    return LINE;
+}
+
 /**
  * @brief 右圆环状态机转移
  */
-ElementType calc_right_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt) {
+ElementType calc_right_ring(const track_result &track, const std::array<std::pair<int, int>, 2> corner_cnt) {
     // 准备进入圆环转移到开始进入圆环
     if (get_track_type() == R_RING_READY) {
         // 右边向外的拐点丢失
@@ -289,7 +306,7 @@ ElementType calc_right_ring(const track_result &track, std::array<std::pair<int,
 /**
  * @brief 左圆环状态机转移
  */
-ElementType calc_left_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt) {
+ElementType calc_left_ring(const track_result &track, const std::array<std::pair<int, int>, 2> corner_cnt) {
     // 准备进入圆环转移到开始进入圆环
     if (get_track_type() == L_RING_READY) {
         std::array<std::pair<int, int>, 2> res = {{{1, 0}, {0, 0}}};

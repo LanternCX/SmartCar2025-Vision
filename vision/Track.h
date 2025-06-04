@@ -114,5 +114,6 @@ typedef struct {
 
 track_result find_lines(cv::Mat img, cv::Point start, int block_size = 7, int max_points = 1000);
 ElementType calc_element_type(const track_result &track);
-ElementType calc_right_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt);
-ElementType calc_left_ring(const track_result &track, std::array<std::pair<int, int>, 2> corner_cnt);
+ElementType calc_cross(const track_result &track, const std::array<std::pair<int, int>, 2> corner_cnt);
+ElementType calc_right_ring(const track_result &track, const std::array<std::pair<int, int>, 2> corner_cnt);
+ElementType calc_left_ring(const track_result &track, const std::array<std::pair<int, int>, 2> corner_cnt);

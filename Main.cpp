@@ -43,9 +43,9 @@ int run() {
         // 不知道为什么 resize 会导致透视变换不可用
         // cv::resize(frame, frame, cv::Size(), 0.5, 0.5);
 
-        // double alpha = 1.0;
-        // int beta = 50;
-        // frame.convertTo(frame, -1, alpha, beta);
+        double alpha = 1.0;
+        int beta = 50;
+        frame.convertTo(frame, -1, alpha, beta);
 
         cv::imshow("raw", frame);
         process_img(frame);
