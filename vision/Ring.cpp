@@ -94,6 +94,6 @@ bool calc_is_ring_in(const track_result track) {
         }
     }
     bool res = min_idx == -1 ? false : min_idx > 280; 
-    debug(min_idx, target.y);
+    // debug(min_idx, target.y);
     return false;
 }

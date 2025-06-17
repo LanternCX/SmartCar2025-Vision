@@ -32,6 +32,7 @@
  * @date 2025-04-03
  */
 void draw_border(cv::Mat& image) {
+    // return;
     if (image.empty()) return;
     // 画矩形框
     cv::rectangle(image, cv::Point(0, 0), cv::Point(image.cols - 1, image.rows - 1), cv::Scalar(0), 10);
@@ -175,45 +176,53 @@ ElementType calc_element_type(const track_result &track) {
     corner_cnt[0] = get_corner_count(left_x);
     corner_cnt[1] = get_corner_count(right_x);
 
-    line_params left_fit_res = fit_line(left.line);
-    line_params right_fit_res = fit_line(right.line);
+    line_params left_fit_res = fit_line(left.center);
+    line_params right_fit_res = fit_line(right.center);
 
-    debug(solt_cnt);
-    debug(corner_cnt);
+    // std::cout << left.center << '\n';
+    // std::cout << right.center << '\n';
+    
+    // debug(solt_cnt);
+    // debug(corner_cnt);
 
-    // 十字状态机转移
-    if (cross_type.count(get_track_type())) {
-        return calc_cross(track, corner_cnt);
-    }
-    // 入十字判断
-    if (corner_cnt[0].first == 1 && corner_cnt[1].first == 1) {
-        return CROSS_BEGIN;
-    }
+    // // 十字状态机转移
+    // if (cross_type.count(get_track_type())) {
+    //     return calc_cross(track, corner_cnt);
+    // }
+    // // 入十字判断
+    // if (corner_cnt[0].first == 1 && corner_cnt[1].first == 1) {
+    //     return CROSS_BEGIN;
+    // }
 
-    // 右圆环状态机转移
-    if (right_ring_type.count(get_track_type())) {
-        return calc_right_ring(track, corner_cnt);
-    }
-    // 已经出环就不重复入环，然后正常判断元素
-    // 入环判断
-    if (corner_cnt == std::array<std::pair<int, int>, 2>{{{0, 0}, {1, 0}}}) {
-        return R_RING_READY;
-    }
+    // // 右圆环状态机转移
+    // if (right_ring_type.count(get_track_type())) {
+    //     return calc_right_ring(track, corner_cnt);
+    // }
+    // // 已经出环就不重复入环，然后正常判断元素
+    // // 入环判断
+    // if (corner_cnt == std::array<std::pair<int, int>, 2>{{{0, 0}, {1, 0}}}) {
+    //     return R_RING_READY;
+    // }
 
-    // 左圆环状态机转移
-    if (left_ring_type.count(get_track_type())) {
-        return calc_left_ring(track, corner_cnt);
-    }
-    // 入环判断
-    if (corner_cnt ==  std::array<std::pair<int, int>, 2>{{{1, 0}, {0, 0}}}) {
-        return L_RING_READY;
-    }
-   
-    if (left_fit_res.slope > 0.15) {
+    // // 左圆环状态机转移
+    // if (left_ring_type.count(get_track_type())) {
+    //     return calc_left_ring(track, corner_cnt);
+    // }
+    // // 入环判断
+    // if (corner_cnt ==  std::array<std::pair<int, int>, 2>{{{1, 0}, {0, 0}}}) {
+    //     return L_RING_READY;
+    // }
+
+    debug(left_fit_res.slope, left_fit_res.is_vertical);
+    debug(right_fit_res.slope, right_fit_res.is_vertical);
+    if (left_fit_res.slope < 0 && left_fit_res.slope > -4) {
+        // return 2
         return R_CURVE;
     }
 
-    if (right_fit_res.slope < -0.15) {
+    // 因为前面镜像过了所以需要注意符号
+    if (right_fit_res.slope > 0 && right_fit_res.slope < 4) {
+        // return 1
         return L_CURVE;
     }
     return LINE;
@@ -365,4 +374,44 @@ ElementType calc_left_ring(const track_result &track, const std::array<std::pair
         }
     }
     return LINE;
+}
+
+std::vector<int> calc_center_x(const track_result &track) {
+    std::vector<cv::Point> left = track.left.center;
+    std::vector<cv::Point> right = track.right.center;
+
+    int height = std::min(track.left.frame_size.height, track.right.frame_size.width);
+    std::vector<int> left_x(height + 1, -1);
+    std::vector<int> right_x(height + 1, -1);
+    for (cv::Point pt : left) {
+        if (left_x[pt.y] != -1) {
+            continue;
+        }
+        left_x[pt.y] = pt.x;
+    }
+    for (cv::Point pt : right) {
+        if (right_x[pt.y] != -1) {
+            continue;
+        }
+        right_x[pt.y] = pt.x;
+    }
+    vector<int> center_x(height + 1, -1);
+    for (int i = 0; i <= height; i++) {
+        if (left_x[i] == -1 && right_x[i] == -1) {
+            continue;
+        }
+
+        if (left_x[i] == -1 && right_x[i] != -1) {
+            center_x[i] = right_x[i];
+        }
+
+        if (left_x[i] != -1 && right_x[i] == -1) {
+            center_x[i] = left_x[i];
+        }
+
+        if (left_x[i] != -1 && right_x[i] != -1) {
+            center_x[i] = (left_x[i] + right_x[i]) / 2;
+        }
+    }
+    return center_x;
 }

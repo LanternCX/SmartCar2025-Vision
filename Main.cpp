@@ -5,6 +5,7 @@
 #include <iostream>
 #include <opencv2/videoio.hpp>
 
+#include "Debug.h"
 #include "Vision.h"
 #include "Type.h"
 #include "Perspective.h"
@@ -48,8 +49,14 @@ int run() {
         frame.convertTo(frame, -1, alpha, beta);
 
         cv::imshow("raw", frame);
-        process_img(frame);
-
+        vision_result res = process_img(frame);
+        int width = frame.cols;
+        static int center = width / 2;
+        if (res.center > 10) {
+            center = res.center;
+        }
+        debug(center);
+        debug(width / 2);
         // 按 'q' 退出，delay 控制播放速度
         if (cv::waitKey(delay) == 'q') {
             break;
@@ -62,10 +69,7 @@ int run() {
     cv::destroyAllWindows();
     return 0;
 }
-int test() {
-    mark_square();
-    return 0;
-}
+
 int main() {
     return run();
 }
